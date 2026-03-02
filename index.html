@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>AURA TERMINAL Terminal</title>
+<title>AURA TERMINAL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -14,6 +14,7 @@
   ::-webkit-scrollbar-track{background:#111}
   ::-webkit-scrollbar-thumb{background:#333}
   input::placeholder{color:#444}
+  button:hover{opacity:0.85}
 </style>
 </head>
 <body>
@@ -21,52 +22,100 @@
 <script type="text/babel">
 const { useState, useEffect, useCallback, useMemo } = React;
 
-const C = {
-  bgMain:"#0d0d0d",bgHeader:"#111111",bgTabBar:"#0d0d0d",
-  bgSection:"#161616",bgChart:"#0a0a0a",
-  textWhite:"#e8e8e8",textDim:"#666666",textDimMid:"#888888",
-  textGreen:"#33cc66",textGreenBright:"#44dd77",textYellow:"#ddaa00",
-  textYellowBright:"#ffcc00",textRed:"#ff3333",textBlue:"#4488ee",textCyan:"#33bbbb",
-  tabActiveBg:"#ddaa00",tabActiveText:"#000000",tabInactiveText:"#666666",
-  openBadge:"#22aa44",liveDot:"#22aa44",
+const THEMES = {
+  dark: {
+    bgMain:"#0d0d0d",bgHeader:"#111111",bgTabBar:"#0d0d0d",
+    bgSection:"#161616",bgChart:"#0a0a0a",
+    textWhite:"#e8e8e8",textDim:"#666666",textDimMid:"#888888",
+    textGreen:"#33cc66",textGreenBright:"#44dd77",textYellow:"#ddaa00",
+    textYellowBright:"#ffcc00",textRed:"#ff3333",textBlue:"#4488ee",textCyan:"#33bbbb",
+    tabActiveBg:"#ddaa00",tabActiveText:"#000000",tabInactiveText:"#666666",
+    openBadge:"#22aa44",liveDot:"#22aa44",border:"#1e1e1e",rowBg:"#161616",
+  },
+  light: {
+    bgMain:"#f0f0f0",bgHeader:"#e0e0e0",bgTabBar:"#e8e8e8",
+    bgSection:"#f8f8f8",bgChart:"#ffffff",
+    textWhite:"#111111",textDim:"#888888",textDimMid:"#555555",
+    textGreen:"#157a3a",textGreenBright:"#1a9944",textYellow:"#996600",
+    textYellowBright:"#cc8800",textRed:"#cc2200",textBlue:"#1155bb",textCyan:"#116688",
+    tabActiveBg:"#cc8800",tabActiveText:"#ffffff",tabInactiveText:"#888888",
+    openBadge:"#157a3a",liveDot:"#157a3a",border:"#cccccc",rowBg:"#ececec",
+  }
 };
 
 const formatVolume = v => {
-  const n=parseFloat(v);if(!n)return"N/A";
+  const n=parseFloat(String(v).replace(/,/g,""));if(!n)return"N/A";
   if(n>=1e9)return(n/1e9).toFixed(2)+"B";
   if(n>=1e6)return(n/1e6).toFixed(2)+"M";
   if(n>=1e3)return(n/1e3).toFixed(2)+"K";
   return String(n);
 };
 const formatMarketCap = v => {
-  const n=parseFloat(v);if(!n)return"N/A";
+  const n=parseFloat(String(v).replace(/,/g,""));if(!n)return"N/A";
   if(n>=1e12)return(n/1e12).toFixed(2)+"T";
   if(n>=1e9)return(n/1e9).toFixed(2)+"B";
   if(n>=1e6)return(n/1e6).toFixed(2)+"M";
   return String(n);
 };
-const getChangeSymbol = c => parseFloat(c)>=0?"▲":"▼";
+const getChangeSymbol = c => parseFloat(String(c).replace(/,/g,""))>=0?"▲":"▼";
 
 const STOCKS = {
-  NVDA:{ticker:"NVDA",name:"NVIDIA CORPORATION",exchange:"US",price:"127.25",change:"+3.42",changePct:"+2.76%",open:"124.10",high:"128.90",low:"123.45",volume:"312450000",mktcap:"3120000000000",pe:"38.4",estPe:"31.2",eps:"3.31",estEps:"4.08",peg:"1.42",divYield:"0.03%",divNote:"Quarterly dividend $0.01/share. Ex-date: Mar 5, 2025.",website:"www.nvidia.com",headquarters:"Santa Clara, CA, USA",employees:"29,600",ceo:"Jensen Huang",ceoTitle:"President & CEO",cfo:"Colette Kress",cfoTitle:"Executive VP & CFO",totRet12m:"+187.4%",betaVsSPX:"1.85",h52:"152.89",h52date:"06/20/24",l52:"47.32",l52date:"10/26/23",ytd:"+82.1%",px1d:"+3.42 / +2.76%",sharesOut:"24.53B / 24.21B",siOfFloat:"1.23% / 0.82%",daysToCover:"0.9",figi:"BBG000BBJQV0",classification:"GICS 4530 / Semiconductors",description:"NVIDIA designs and manufactures GPUs, system-on-chip units, and computer vision technology. Known for computing platforms used in gaming, professional visualization, data center, and automotive markets."},
-  AAPL:{ticker:"AAPL",name:"APPLE INC.",exchange:"US",price:"189.30",change:"-1.20",changePct:"-0.63%",open:"190.50",high:"191.40",low:"188.60",volume:"58320000",mktcap:"2940000000000",pe:"29.6",estPe:"27.1",eps:"6.39",estEps:"6.98",peg:"2.89",divYield:"0.54%",divNote:"Quarterly dividend $0.25/share. Ex-date: Feb 10, 2025.",website:"www.apple.com",headquarters:"Cupertino, CA, USA",employees:"150,000",ceo:"Tim Cook",ceoTitle:"Chief Executive Officer",cfo:"Luca Maestri",cfoTitle:"Senior VP & CFO",totRet12m:"+18.2%",betaVsSPX:"1.24",h52:"199.62",h52date:"07/15/24",l52:"155.98",l52date:"04/19/24",ytd:"+5.4%",px1d:"-1.20 / -0.63%",sharesOut:"15.44B / 15.32B",siOfFloat:"0.72% / 0.31%",daysToCover:"1.2",figi:"BBG000B9XRY4",classification:"GICS 4520 / Technology Hardware",description:"Apple designs, manufactures and markets smartphones, personal computers, tablets, wearables, and accessories worldwide."},
-  MSFT:{ticker:"MSFT",name:"MICROSOFT CORPORATION",exchange:"US",price:"415.80",change:"+5.10",changePct:"+1.24%",open:"410.90",high:"417.20",low:"409.80",volume:"24180000",mktcap:"3090000000000",pe:"35.2",estPe:"29.8",eps:"11.81",estEps:"13.95",peg:"2.31",divYield:"0.72%",divNote:"Quarterly dividend $0.75/share. Ex-date: Feb 14, 2025.",website:"www.microsoft.com",headquarters:"Redmond, WA, USA",employees:"221,000",ceo:"Satya Nadella",ceoTitle:"Chairman & CEO",cfo:"Amy Hood",cfoTitle:"Executive VP & CFO",totRet12m:"+22.8%",betaVsSPX:"0.93",h52:"468.35",h52date:"07/05/24",l52:"309.45",l52date:"10/27/23",ytd:"+3.2%",px1d:"+5.10 / +1.24%",sharesOut:"7.43B / 7.41B",siOfFloat:"0.54% / 0.22%",daysToCover:"1.4",figi:"BBG000BPH459",classification:"GICS 4510 / Software",description:"Microsoft develops software, services, devices, and solutions including Office 365, Azure cloud, Windows, Xbox, and LinkedIn."},
-  TSLA:{ticker:"TSLA",name:"TESLA INC.",exchange:"US",price:"248.40",change:"+12.75",changePct:"+5.41%",open:"235.80",high:"251.20",low:"234.60",volume:"142680000",mktcap:"791000000000",pe:"62.1",estPe:"49.3",eps:"4.00",estEps:"5.04",peg:"3.12",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.tesla.com",headquarters:"Austin, TX, USA",employees:"140,473",ceo:"Elon Musk",ceoTitle:"Chief Executive Officer",cfo:"Vaibhav Taneja",cfoTitle:"Chief Financial Officer",totRet12m:"-12.4%",betaVsSPX:"2.34",h52:"278.98",h52date:"07/19/24",l52:"138.80",l52date:"04/22/24",ytd:"+28.6%",px1d:"+12.75 / +5.41%",sharesOut:"3.19B / 3.17B",siOfFloat:"3.12% / 2.98%",daysToCover:"2.1",figi:"BBG000N9MNX3",classification:"GICS 2510 / Automobiles",description:"Tesla designs, develops, manufactures, leases, and sells electric vehicles, energy generation and storage systems."},
-  META:{ticker:"META",name:"META PLATFORMS INC.",exchange:"US",price:"527.60",change:"+8.90",changePct:"+1.71%",open:"519.30",high:"530.10",low:"518.40",volume:"18940000",mktcap:"1350000000000",pe:"25.8",estPe:"22.4",eps:"20.44",estEps:"23.55",peg:"1.18",divYield:"0.38%",divNote:"Inaugural dividend $0.50/share initiated Q1 2024.",website:"www.meta.com",headquarters:"Menlo Park, CA, USA",employees:"67,317",ceo:"Mark Zuckerberg",ceoTitle:"Chairman & CEO",cfo:"Susan Li",cfoTitle:"Chief Financial Officer",totRet12m:"+78.2%",betaVsSPX:"1.42",h52:"602.95",h52date:"10/30/24",l52:"276.73",l52date:"11/01/23",ytd:"+38.4%",px1d:"+8.90 / +1.71%",sharesOut:"2.56B / 2.51B",siOfFloat:"0.84% / 0.62%",daysToCover:"1.0",figi:"BBG023Y4QLP0",classification:"GICS 5020 / Interactive Media",description:"Meta Platforms connects people and businesses through Facebook, Instagram, Messenger, and WhatsApp, and develops AR/VR through Reality Labs."},
-  AMZN:{ticker:"AMZN",name:"AMAZON.COM INC.",exchange:"US",price:"198.75",change:"+2.34",changePct:"+1.19%",open:"196.60",high:"199.80",low:"195.90",volume:"43210000",mktcap:"2080000000000",pe:"44.2",estPe:"35.8",eps:"4.50",estEps:"5.55",peg:"1.92",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.amazon.com",headquarters:"Seattle, WA, USA",employees:"1,500,000",ceo:"Andy Jassy",ceoTitle:"President & CEO",cfo:"Brian Olsavsky",cfoTitle:"Senior VP & CFO",totRet12m:"+55.6%",betaVsSPX:"1.31",h52:"229.00",h52date:"02/14/25",l52:"118.35",l52date:"02/14/24",ytd:"+12.0%",px1d:"+2.34 / +1.19%",sharesOut:"10.53B / 10.48B",siOfFloat:"0.92% / 0.61%",daysToCover:"1.1",figi:"BBG000BVPV84",classification:"GICS 2550 / Broadline Retail",description:"Amazon is the world's largest e-commerce and cloud computing company. AWS dominates cloud infrastructure with advertising, Prime Video and Alexa as key segments."},
-  GOOGL:{ticker:"GOOGL",name:"ALPHABET INC. CLASS A",exchange:"US",price:"172.40",change:"-0.85",changePct:"-0.49%",open:"173.25",high:"174.10",low:"171.50",volume:"27840000",mktcap:"2130000000000",pe:"21.8",estPe:"18.9",eps:"7.91",estEps:"9.13",peg:"1.22",divYield:"0.46%",divNote:"First dividend $0.20/share initiated Q2 2024.",website:"www.alphabet.com",headquarters:"Mountain View, CA, USA",employees:"181,269",ceo:"Sundar Pichai",ceoTitle:"CEO, Alphabet & Google",cfo:"Anat Ashkenazi",cfoTitle:"Senior VP & CFO",totRet12m:"+28.4%",betaVsSPX:"1.06",h52:"207.05",h52date:"02/04/25",l52:"130.67",l52date:"11/01/23",ytd:"-8.2%",px1d:"-0.85 / -0.49%",sharesOut:"12.29B / 12.08B",siOfFloat:"0.66% / 0.45%",daysToCover:"1.3",figi:"BBG009S39JX6",classification:"GICS 5020 / Interactive Media",description:"Alphabet is the parent company of Google. Revenue is driven primarily by advertising. Other segments include Google Cloud, YouTube, and Other Bets including Waymo."},
+  NVDA:{ticker:"NVDA",name:"NVIDIA CORPORATION",exchange:"US",assetType:"Equity",currency:"USD",sector:"Technology",industry:"Semiconductors",price:"127.25",change:"+3.42",changePct:"+2.76%",open:"124.10",high:"128.90",low:"123.45",volume:"312450000",mktcap:"3120000000000",pe:"38.4",estPe:"31.2",eps:"3.31",estEps:"4.08",peg:"1.42",divYield:"0.03%",divNote:"Quarterly dividend $0.01/share. Ex-date: Mar 5, 2025.",website:"www.nvidia.com",headquarters:"Santa Clara, CA, USA",employees:"29,600",ceo:"Jensen Huang",ceoTitle:"President & CEO",cfo:"Colette Kress",cfoTitle:"Executive VP & CFO",totRet12m:"+187.4%",betaVsSPX:"1.85",h52:"152.89",h52date:"06/20/24",l52:"47.32",l52date:"10/26/23",ytd:"+82.1%",px1d:"+3.42 / +2.76%",sharesOut:"24.53B / 24.21B",siOfFloat:"1.23% / 0.82%",daysToCover:"0.9",figi:"BBG000BBJQV0",classification:"GICS 4530 / Semiconductors",description:"NVIDIA designs and manufactures GPUs, system-on-chip units, and computer vision technology. Known for computing platforms used in gaming, professional visualization, data center, and automotive markets.",ownership:[{name:"Vanguard Group",pct:"8.42%",shares:"2.07B",type:"Index Fund"},{name:"BlackRock",pct:"7.01%",shares:"1.72B",type:"Index Fund"},{name:"Fidelity",pct:"4.32%",shares:"1.06B",type:"Active Fund"},{name:"State Street",pct:"3.87%",shares:"0.95B",type:"Index Fund"},{name:"Jensen Huang (CEO)",pct:"3.51%",shares:"0.86B",type:"Insider"}]},
+  AAPL:{ticker:"AAPL",name:"APPLE INC.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Technology",industry:"Consumer Electronics",price:"189.30",change:"-1.20",changePct:"-0.63%",open:"190.50",high:"191.40",low:"188.60",volume:"58320000",mktcap:"2940000000000",pe:"29.6",estPe:"27.1",eps:"6.39",estEps:"6.98",peg:"2.89",divYield:"0.54%",divNote:"Quarterly dividend $0.25/share. Ex-date: Feb 10, 2025.",website:"www.apple.com",headquarters:"Cupertino, CA, USA",employees:"150,000",ceo:"Tim Cook",ceoTitle:"Chief Executive Officer",cfo:"Luca Maestri",cfoTitle:"Senior VP & CFO",totRet12m:"+18.2%",betaVsSPX:"1.24",h52:"199.62",h52date:"07/15/24",l52:"155.98",l52date:"04/19/24",ytd:"+5.4%",px1d:"-1.20 / -0.63%",sharesOut:"15.44B / 15.32B",siOfFloat:"0.72% / 0.31%",daysToCover:"1.2",figi:"BBG000B9XRY4",classification:"GICS 4520 / Technology Hardware",description:"Apple designs, manufactures and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.",ownership:[{name:"Vanguard Group",pct:"9.12%",shares:"1.41B",type:"Index Fund"},{name:"BlackRock",pct:"7.55%",shares:"1.17B",type:"Index Fund"},{name:"Berkshire Hathaway",pct:"5.98%",shares:"0.92B",type:"Active Fund"},{name:"State Street",pct:"3.98%",shares:"0.61B",type:"Index Fund"},{name:"Tim Cook (CEO)",pct:"0.02%",shares:"3.2M",type:"Insider"}]},
+  MSFT:{ticker:"MSFT",name:"MICROSOFT CORPORATION",exchange:"US",assetType:"Equity",currency:"USD",sector:"Technology",industry:"Software",price:"415.80",change:"+5.10",changePct:"+1.24%",open:"410.90",high:"417.20",low:"409.80",volume:"24180000",mktcap:"3090000000000",pe:"35.2",estPe:"29.8",eps:"11.81",estEps:"13.95",peg:"2.31",divYield:"0.72%",divNote:"Quarterly dividend $0.75/share. Ex-date: Feb 14, 2025.",website:"www.microsoft.com",headquarters:"Redmond, WA, USA",employees:"221,000",ceo:"Satya Nadella",ceoTitle:"Chairman & CEO",cfo:"Amy Hood",cfoTitle:"Executive VP & CFO",totRet12m:"+22.8%",betaVsSPX:"0.93",h52:"468.35",h52date:"07/05/24",l52:"309.45",l52date:"10/27/23",ytd:"+3.2%",px1d:"+5.10 / +1.24%",sharesOut:"7.43B / 7.41B",siOfFloat:"0.54% / 0.22%",daysToCover:"1.4",figi:"BBG000BPH459",classification:"GICS 4510 / Software",description:"Microsoft develops software, services, devices, and solutions including Office 365, Azure cloud, Windows, Xbox, and LinkedIn.",ownership:[{name:"Vanguard Group",pct:"9.01%",shares:"669M",type:"Index Fund"},{name:"BlackRock",pct:"7.33%",shares:"544M",type:"Index Fund"},{name:"State Street",pct:"4.11%",shares:"305M",type:"Index Fund"},{name:"Fidelity",pct:"3.12%",shares:"232M",type:"Active Fund"},{name:"Satya Nadella (CEO)",pct:"0.05%",shares:"3.7M",type:"Insider"}]},
+  TSLA:{ticker:"TSLA",name:"TESLA INC.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Consumer Discretionary",industry:"Electric Vehicles",price:"248.40",change:"+12.75",changePct:"+5.41%",open:"235.80",high:"251.20",low:"234.60",volume:"142680000",mktcap:"791000000000",pe:"62.1",estPe:"49.3",eps:"4.00",estEps:"5.04",peg:"3.12",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.tesla.com",headquarters:"Austin, TX, USA",employees:"140,473",ceo:"Elon Musk",ceoTitle:"Chief Executive Officer",cfo:"Vaibhav Taneja",cfoTitle:"Chief Financial Officer",totRet12m:"-12.4%",betaVsSPX:"2.34",h52:"278.98",h52date:"07/19/24",l52:"138.80",l52date:"04/22/24",ytd:"+28.6%",px1d:"+12.75 / +5.41%",sharesOut:"3.19B / 3.17B",siOfFloat:"3.12% / 2.98%",daysToCover:"2.1",figi:"BBG000N9MNX3",classification:"GICS 2510 / Automobiles",description:"Tesla designs, develops, manufactures, leases, and sells electric vehicles, energy generation and storage systems.",ownership:[{name:"Elon Musk (CEO)",pct:"13.01%",shares:"414M",type:"Insider"},{name:"Vanguard Group",pct:"7.12%",shares:"226M",type:"Index Fund"},{name:"BlackRock",pct:"5.44%",shares:"173M",type:"Index Fund"},{name:"State Street",pct:"3.01%",shares:"95M",type:"Index Fund"},{name:"ARK Invest",pct:"1.88%",shares:"60M",type:"Active Fund"}]},
+  META:{ticker:"META",name:"META PLATFORMS INC.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Communication Services",industry:"Social Media",price:"527.60",change:"+8.90",changePct:"+1.71%",open:"519.30",high:"530.10",low:"518.40",volume:"18940000",mktcap:"1350000000000",pe:"25.8",estPe:"22.4",eps:"20.44",estEps:"23.55",peg:"1.18",divYield:"0.38%",divNote:"Inaugural dividend $0.50/share initiated Q1 2024.",website:"www.meta.com",headquarters:"Menlo Park, CA, USA",employees:"67,317",ceo:"Mark Zuckerberg",ceoTitle:"Chairman & CEO",cfo:"Susan Li",cfoTitle:"Chief Financial Officer",totRet12m:"+78.2%",betaVsSPX:"1.42",h52:"602.95",h52date:"10/30/24",l52:"276.73",l52date:"11/01/23",ytd:"+38.4%",px1d:"+8.90 / +1.71%",sharesOut:"2.56B / 2.51B",siOfFloat:"0.84% / 0.62%",daysToCover:"1.0",figi:"BBG023Y4QLP0",classification:"GICS 5020 / Interactive Media",description:"Meta Platforms connects people and businesses through Facebook, Instagram, Messenger, and WhatsApp, and develops AR/VR through Reality Labs.",ownership:[{name:"Mark Zuckerberg (CEO)",pct:"13.62%",shares:"349M",type:"Insider"},{name:"Vanguard Group",pct:"8.11%",shares:"207M",type:"Index Fund"},{name:"BlackRock",pct:"6.54%",shares:"167M",type:"Index Fund"},{name:"Fidelity",pct:"3.22%",shares:"82M",type:"Active Fund"},{name:"State Street",pct:"3.01%",shares:"77M",type:"Index Fund"}]},
+  AMZN:{ticker:"AMZN",name:"AMAZON.COM INC.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Consumer Discretionary",industry:"E-Commerce / Cloud",price:"198.75",change:"+2.34",changePct:"+1.19%",open:"196.60",high:"199.80",low:"195.90",volume:"43210000",mktcap:"2080000000000",pe:"44.2",estPe:"35.8",eps:"4.50",estEps:"5.55",peg:"1.92",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.amazon.com",headquarters:"Seattle, WA, USA",employees:"1,500,000",ceo:"Andy Jassy",ceoTitle:"President & CEO",cfo:"Brian Olsavsky",cfoTitle:"Senior VP & CFO",totRet12m:"+55.6%",betaVsSPX:"1.31",h52:"229.00",h52date:"02/14/25",l52:"118.35",l52date:"02/14/24",ytd:"+12.0%",px1d:"+2.34 / +1.19%",sharesOut:"10.53B / 10.48B",siOfFloat:"0.92% / 0.61%",daysToCover:"1.1",figi:"BBG000BVPV84",classification:"GICS 2550 / Broadline Retail",description:"Amazon is the world's largest e-commerce and cloud computing company. AWS dominates cloud infrastructure with advertising, Prime Video and Alexa as key segments.",ownership:[{name:"Jeff Bezos",pct:"9.42%",shares:"991M",type:"Insider"},{name:"Vanguard Group",pct:"7.55%",shares:"794M",type:"Index Fund"},{name:"BlackRock",pct:"6.01%",shares:"633M",type:"Index Fund"},{name:"State Street",pct:"3.44%",shares:"362M",type:"Index Fund"},{name:"Andy Jassy (CEO)",pct:"0.03%",shares:"3.1M",type:"Insider"}]},
+  GOOGL:{ticker:"GOOGL",name:"ALPHABET INC. CLASS A",exchange:"US",assetType:"Equity",currency:"USD",sector:"Communication Services",industry:"Internet Services",price:"172.40",change:"-0.85",changePct:"-0.49%",open:"173.25",high:"174.10",low:"171.50",volume:"27840000",mktcap:"2130000000000",pe:"21.8",estPe:"18.9",eps:"7.91",estEps:"9.13",peg:"1.22",divYield:"0.46%",divNote:"First dividend $0.20/share initiated Q2 2024.",website:"www.alphabet.com",headquarters:"Mountain View, CA, USA",employees:"181,269",ceo:"Sundar Pichai",ceoTitle:"CEO, Alphabet & Google",cfo:"Anat Ashkenazi",cfoTitle:"Senior VP & CFO",totRet12m:"+28.4%",betaVsSPX:"1.06",h52:"207.05",h52date:"02/04/25",l52:"130.67",l52date:"11/01/23",ytd:"-8.2%",px1d:"-0.85 / -0.49%",sharesOut:"12.29B / 12.08B",siOfFloat:"0.66% / 0.45%",daysToCover:"1.3",figi:"BBG009S39JX6",classification:"GICS 5020 / Interactive Media",description:"Alphabet is the parent company of Google. Revenue is driven primarily by advertising. Other segments include Google Cloud, YouTube, and Other Bets including Waymo.",ownership:[{name:"Larry Page",pct:"5.94%",shares:"730M",type:"Insider"},{name:"Sergey Brin",pct:"5.71%",shares:"702M",type:"Insider"},{name:"Vanguard Group",pct:"7.11%",shares:"874M",type:"Index Fund"},{name:"BlackRock",pct:"5.88%",shares:"723M",type:"Index Fund"},{name:"State Street",pct:"3.12%",shares:"384M",type:"Index Fund"}]},
+  AMD:{ticker:"AMD",name:"ADVANCED MICRO DEVICES",exchange:"US",assetType:"Equity",currency:"USD",sector:"Technology",industry:"Semiconductors",price:"162.30",change:"+4.10",changePct:"+2.59%",open:"158.40",high:"163.80",low:"157.90",volume:"68420000",mktcap:"262000000000",pe:"118.0",estPe:"29.4",eps:"1.38",estEps:"5.52",peg:"2.11",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.amd.com",headquarters:"Santa Clara, CA, USA",employees:"26,000",ceo:"Lisa Su",ceoTitle:"President & CEO",cfo:"Jean Hu",cfoTitle:"Executive VP & CFO",totRet12m:"-12.3%",betaVsSPX:"1.72",h52:"227.30",h52date:"03/08/24",l52:"121.33",l52date:"10/31/23",ytd:"-5.1%",px1d:"+4.10 / +2.59%",sharesOut:"1.62B / 1.61B",siOfFloat:"3.44% / 2.11%",daysToCover:"1.8",figi:"BBG000BBQCY0",classification:"GICS 4530 / Semiconductors",description:"AMD designs and develops high-performance computing and visualization products including CPUs, GPUs, FPGAs, and adaptive SoCs for data centers, gaming, and embedded markets.",ownership:[{name:"Vanguard Group",pct:"9.12%",shares:"147M",type:"Index Fund"},{name:"BlackRock",pct:"7.55%",shares:"122M",type:"Index Fund"},{name:"State Street",pct:"4.01%",shares:"65M",type:"Index Fund"},{name:"Lisa Su (CEO)",pct:"0.44%",shares:"7.1M",type:"Insider"},{name:"Fidelity",pct:"3.88%",shares:"63M",type:"Active Fund"}]},
+  JPM:{ticker:"JPM",name:"JPMORGAN CHASE & CO.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Financials",industry:"Banking",price:"224.10",change:"+1.85",changePct:"+0.83%",open:"222.30",high:"225.40",low:"221.80",volume:"11240000",mktcap:"645000000000",pe:"12.4",estPe:"11.8",eps:"18.07",estEps:"19.00",peg:"1.54",divYield:"2.14%",divNote:"Quarterly dividend $1.25/share. Ex-date: Jan 5, 2025.",website:"www.jpmorganchase.com",headquarters:"New York, NY, USA",employees:"309,926",ceo:"Jamie Dimon",ceoTitle:"Chairman & CEO",cfo:"Jeremy Barnum",cfoTitle:"Chief Financial Officer",totRet12m:"+48.2%",betaVsSPX:"1.12",h52:"263.00",h52date:"11/29/24",l52:"136.73",l52date:"01/18/24",ytd:"+8.4%",px1d:"+1.85 / +0.83%",sharesOut:"2.88B / 2.85B",siOfFloat:"0.44% / 0.21%",daysToCover:"0.8",figi:"BBG000DMBXR2",classification:"GICS 4010 / Diversified Banks",description:"JPMorgan Chase is the largest US bank by assets, providing investment banking, financial services, retail banking, commercial banking, financial transaction processing, and asset management.",ownership:[{name:"Vanguard Group",pct:"8.51%",shares:"245M",type:"Index Fund"},{name:"BlackRock",pct:"6.88%",shares:"198M",type:"Index Fund"},{name:"State Street",pct:"4.21%",shares:"121M",type:"Index Fund"},{name:"Jamie Dimon (CEO)",pct:"0.45%",shares:"13M",type:"Insider"},{name:"Fidelity",pct:"3.11%",shares:"89M",type:"Active Fund"}]},
+  NFLX:{ticker:"NFLX",name:"NETFLIX INC.",exchange:"US",assetType:"Equity",currency:"USD",sector:"Communication Services",industry:"Streaming",price:"742.80",change:"+9.20",changePct:"+1.25%",open:"733.80",high:"748.10",low:"731.50",volume:"4820000",mktcap:"318000000000",pe:"44.8",estPe:"36.2",eps:"16.58",estEps:"20.52",peg:"2.14",divYield:"N/A",divNote:"No dividend currently paid.",website:"www.netflix.com",headquarters:"Los Gatos, CA, USA",employees:"13,000",ceo:"Ted Sarandos",ceoTitle:"Co-CEO",cfo:"Spencer Neumann",cfoTitle:"Chief Financial Officer",totRet12m:"+68.4%",betaVsSPX:"1.22",h52:"941.75",h52date:"01/20/25",l52:"445.83",l52date:"04/19/24",ytd:"-5.4%",px1d:"+9.20 / +1.25%",sharesOut:"427M / 425M",siOfFloat:"1.44% / 1.01%",daysToCover:"1.2",figi:"BBG000CL9VN6",classification:"GICS 5020 / Movies & Entertainment",description:"Netflix is the world's leading subscription streaming entertainment service with 260+ million paid memberships in 190+ countries.",ownership:[{name:"Vanguard Group",pct:"8.22%",shares:"35M",type:"Index Fund"},{name:"BlackRock",pct:"6.55%",shares:"28M",type:"Index Fund"},{name:"Reed Hastings",pct:"2.11%",shares:"9M",type:"Insider"},{name:"State Street",pct:"3.88%",shares:"16M",type:"Index Fund"},{name:"Fidelity",pct:"4.01%",shares:"17M",type:"Active Fund"}]},
+  PETR4:{ticker:"PETR4",name:"PETROBRAS PN",exchange:"B3",assetType:"Equity",currency:"BRL",sector:"Energia",industry:"Petróleo & Gás",price:"38.42",change:"+0.58",changePct:"+1.53%",open:"37.90",high:"38.75",low:"37.82",volume:"98240000",mktcap:"499000000000",pe:"4.8",estPe:"5.1",eps:"8.00",estEps:"7.53",peg:"0.42",divYield:"14.20%",divNote:"Dividendos semestrais. Última distribuição: R$2.43/ação em Dez/2024.",website:"www.petrobras.com.br",headquarters:"Rio de Janeiro, RJ, Brasil",employees:"46,491",ceo:"Magda Chambriard",ceoTitle:"Presidente & CEO",cfo:"Fernando Melgarejo",cfoTitle:"Diretor Financeiro",totRet12m:"-8.4%",betaVsSPX:"0.82",h52:"43.00",h52date:"07/18/24",l52:"30.90",l52date:"04/19/24",ytd:"+4.2%",px1d:"+0.58 / +1.53%",sharesOut:"13.04B / 7.44B",siOfFloat:"5.21% / 4.11%",daysToCover:"1.8",figi:"BBG000BF4KL1",classification:"GICS 1010 / Integrated Oil & Gas",description:"A Petrobras é a maior empresa da América Latina e atua na exploração, produção, refino, comercialização e transporte de petróleo e derivados.",ownership:[{name:"Governo Federal (União)",pct:"36.61%",shares:"4.77B",type:"Estatal"},{name:"BNDESPAR",pct:"9.12%",shares:"1.19B",type:"Estatal"},{name:"Vanguard Group",pct:"2.44%",shares:"318M",type:"Index Fund"},{name:"BlackRock",pct:"2.01%",shares:"262M",type:"Index Fund"},{name:"Free Float",pct:"36.01%",shares:"4.69B",type:"Público"}]},
+  VALE3:{ticker:"VALE3",name:"VALE ON",exchange:"B3",assetType:"Equity",currency:"BRL",sector:"Materiais",industry:"Mineração",price:"61.85",change:"-0.92",changePct:"-1.47%",open:"62.80",high:"63.10",low:"61.42",volume:"44180000",mktcap:"285000000000",pe:"7.2",estPe:"8.4",eps:"8.59",estEps:"7.36",peg:"0.88",divYield:"8.40%",divNote:"Dividendos semestrais. Última distribuição: R$2.09/ação em Set/2024.",website:"www.vale.com",headquarters:"Rio de Janeiro, RJ, Brasil",employees:"125,538",ceo:"Gustavo Pimenta",ceoTitle:"Presidente & CEO",cfo:"Gustavo Pimenta",cfoTitle:"CFO",totRet12m:"-22.4%",betaVsSPX:"0.91",h52:"85.44",h52date:"03/28/24",l52:"55.11",l52date:"09/10/24",ytd:"-5.8%",px1d:"-0.92 / -1.47%",sharesOut:"4.40B / 4.38B",siOfFloat:"4.11% / 3.22%",daysToCover:"2.1",figi:"BBG000BHNR53",classification:"GICS 1510 / Metals & Mining",description:"A Vale é uma das maiores mineradoras do mundo, produtora de minério de ferro, níquel, cobre e outros metais. Opera em 30 países com mineração, logística e energia.",ownership:[{name:"Previ",pct:"9.42%",shares:"415M",type:"Fundo de Pensão"},{name:"BlackRock",pct:"5.88%",shares:"259M",type:"Index Fund"},{name:"Vanguard Group",pct:"4.11%",shares:"181M",type:"Index Fund"},{name:"Bradesco Seguros",pct:"4.01%",shares:"176M",type:"Seguros"},{name:"Capital Group",pct:"3.22%",shares:"142M",type:"Active Fund"}]},
+  ITUB4:{ticker:"ITUB4",name:"ITAÚ UNIBANCO PN",exchange:"B3",assetType:"Equity",currency:"BRL",sector:"Financeiro",industry:"Bancos",price:"35.10",change:"+0.42",changePct:"+1.21%",open:"34.72",high:"35.44",low:"34.60",volume:"52180000",mktcap:"344000000000",pe:"8.4",estPe:"7.8",eps:"4.18",estEps:"4.50",peg:"0.94",divYield:"4.80%",divNote:"JCP mensais. Última distribuição: R$0.15/ação em Jan/2025.",website:"www.itau.com.br",headquarters:"São Paulo, SP, Brasil",employees:"98,000",ceo:"Milton Maluhy Filho",ceoTitle:"Presidente & CEO",cfo:"Alexsandro Broedel",cfoTitle:"Diretor Financeiro",totRet12m:"+28.4%",betaVsSPX:"0.74",h52:"37.20",h52date:"10/15/24",l52:"24.88",l52date:"01/22/24",ytd:"+3.4%",px1d:"+0.42 / +1.21%",sharesOut:"9.76B / 4.88B",siOfFloat:"2.44% / 1.88%",daysToCover:"1.4",figi:"BBG000BG4YK8",classification:"GICS 4010 / Diversified Banks",description:"O Itaú Unibanco é o maior banco privado do Brasil e da América Latina, com operações em 18 países. Oferece serviços financeiros completos.",ownership:[{name:"Família Setúbal/Villela",pct:"37.12%",shares:"3.62B",type:"Controlador"},{name:"Bravo Participações",pct:"10.44%",shares:"1.02B",type:"Controlador"},{name:"Vanguard Group",pct:"3.11%",shares:"303M",type:"Index Fund"},{name:"BlackRock",pct:"2.88%",shares:"281M",type:"Index Fund"},{name:"Free Float",pct:"46.45%",shares:"4.53B",type:"Público"}]},
+  BBDC4:{ticker:"BBDC4",name:"BRADESCO PN",exchange:"B3",assetType:"Equity",currency:"BRL",sector:"Financeiro",industry:"Bancos",price:"13.85",change:"-0.21",changePct:"-1.49%",open:"14.08",high:"14.15",low:"13.78",volume:"64220000",mktcap:"145000000000",pe:"9.1",estPe:"8.2",eps:"1.52",estEps:"1.69",peg:"1.12",divYield:"5.20%",divNote:"JCP mensais. Última distribuição: R$0.06/ação em Jan/2025.",website:"www.bradesco.com.br",headquarters:"Osasco, SP, Brasil",employees:"91,000",ceo:"Marcelo Noronha",ceoTitle:"Presidente & CEO",cfo:"Leandro Miranda",cfoTitle:"Diretor Financeiro",totRet12m:"-8.4%",betaVsSPX:"0.68",h52:"18.55",h52date:"03/28/24",l52:"11.21",l52date:"12/20/24",ytd:"-4.8%",px1d:"-0.21 / -1.49%",sharesOut:"8.80B / 5.20B",siOfFloat:"3.88% / 2.44%",daysToCover:"2.0",figi:"BBG000BGL4F5",classification:"GICS 4010 / Diversified Banks",description:"O Bradesco é um dos maiores bancos brasileiros, presente em todo território nacional com serviços bancários, seguros, previdência e capitalização.",ownership:[{name:"Cidade de Deus",pct:"23.50%",shares:"2.07B",type:"Controlador"},{name:"Fundação Bradesco",pct:"8.81%",shares:"775M",type:"Fundação"},{name:"Vanguard Group",pct:"2.44%",shares:"215M",type:"Index Fund"},{name:"BlackRock",pct:"2.01%",shares:"177M",type:"Index Fund"},{name:"Free Float",pct:"63.24%",shares:"5.56B",type:"Público"}]},
+  WEGE3:{ticker:"WEGE3",name:"WEG ON",exchange:"B3",assetType:"Equity",currency:"BRL",sector:"Indústria",industry:"Equipamentos Elétricos",price:"52.14",change:"+0.88",changePct:"+1.72%",open:"51.30",high:"52.50",low:"51.10",volume:"12180000",mktcap:"207000000000",pe:"35.4",estPe:"29.8",eps:"1.47",estEps:"1.75",peg:"2.44",divYield:"1.20%",divNote:"Dividendos trimestrais. Última distribuição: R$0.16/ação em Jan/2025.",website:"www.weg.net",headquarters:"Jaraguá do Sul, SC, Brasil",employees:"43,000",ceo:"Harry Schmelzer Jr.",ceoTitle:"Diretor-Presidente",cfo:"André Menegueti",cfoTitle:"Diretor Financeiro",totRet12m:"+12.4%",betaVsSPX:"0.55",h52:"57.88",h52date:"10/14/24",l52:"37.45",l52date:"01/29/24",ytd:"+8.8%",px1d:"+0.88 / +1.72%",sharesOut:"3.92B / 3.91B",siOfFloat:"1.44% / 1.01%",daysToCover:"1.2",figi:"BBG000BJ5ZK1",classification:"GICS 2010 / Electrical Equipment",description:"A WEG é líder mundial em soluções elétricas para motores, automação, geradores, transformadores e tintas industriais. Exporta para mais de 135 países.",ownership:[{name:"Família Fundadora",pct:"42.11%",shares:"1.65B",type:"Controlador"},{name:"Vanguard Group",pct:"3.44%",shares:"135M",type:"Index Fund"},{name:"BlackRock",pct:"2.88%",shares:"113M",type:"Index Fund"},{name:"Capital Group",pct:"3.01%",shares:"118M",type:"Active Fund"},{name:"Free Float",pct:"48.56%",shares:"1.90B",type:"Público"}]},
+  BTC:{ticker:"BTC",name:"BITCOIN",exchange:"CRYPTO",assetType:"Crypto",currency:"USD",sector:"Crypto",industry:"Digital Currency",price:"67842.50",change:"+1244.30",changePct:"+1.87%",open:"66598.20",high:"68410.80",low:"66201.40",volume:"38420000000",mktcap:"1334000000000",pe:"N/A",estPe:"N/A",eps:"N/A",estEps:"N/A",peg:"N/A",divYield:"N/A",divNote:"Cryptocurrency — no dividends.",website:"bitcoin.org",headquarters:"Decentralized",employees:"N/A",ceo:"Satoshi Nakamoto",ceoTitle:"Creator (Anonymous)",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+142.8%",betaVsSPX:"1.44",h52:"73750.07",h52date:"03/14/24",l52:"25162.16",l52date:"01/23/24",ytd:"+52.4%",px1d:"+1244.30 / +1.87%",sharesOut:"19.73M BTC",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"Cryptocurrency / Layer 1",description:"Bitcoin is the world's first decentralized digital currency. It operates on a peer-to-peer network without a central authority. Supply is capped at 21 million BTC.",ownership:[{name:"Satoshi Nakamoto",pct:"~4.76%",shares:"~1M BTC",type:"Creator"},{name:"MicroStrategy",pct:"~0.82%",shares:"~161K BTC",type:"Corporate"},{name:"ETF Holdings",pct:"~3.44%",shares:"~680K BTC",type:"ETF"},{name:"Binance",pct:"~3.01%",shares:"~594K BTC",type:"Exchange"},{name:"Retail/Unknown",pct:"~87.97%",shares:"~17.3M BTC",type:"Public"}]},
+  ETH:{ticker:"ETH",name:"ETHEREUM",exchange:"CRYPTO",assetType:"Crypto",currency:"USD",sector:"Crypto",industry:"Smart Contracts",price:"3544.80",change:"+88.20",changePct:"+2.55%",open:"3456.60",high:"3580.40",low:"3421.10",volume:"18240000000",mktcap:"425000000000",pe:"N/A",estPe:"N/A",eps:"N/A",estEps:"N/A",peg:"N/A",divYield:"~4.2% (staking)",divNote:"ETH staking yields ~4.2% APY. Not a traditional dividend.",website:"ethereum.org",headquarters:"Decentralized",employees:"N/A",ceo:"Vitalik Buterin",ceoTitle:"Co-Founder",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+82.4%",betaVsSPX:"1.62",h52:"4092.27",h52date:"03/12/24",l52:"1521.24",l52date:"01/23/24",ytd:"+48.8%",px1d:"+88.20 / +2.55%",sharesOut:"120.1M ETH",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"Cryptocurrency / Smart Contract Platform",description:"Ethereum is a decentralized blockchain platform that enables smart contracts and decentralized applications. Post-Merge, ETH uses proof-of-stake consensus.",ownership:[{name:"Vitalik Buterin",pct:"~0.31%",shares:"~373K ETH",type:"Co-Founder"},{name:"Ethereum Foundation",pct:"~0.24%",shares:"~289K ETH",type:"Foundation"},{name:"ETF Holdings",pct:"~2.11%",shares:"~2.53M ETH",type:"ETF"},{name:"Staked (Validators)",pct:"~26.4%",shares:"~31.7M ETH",type:"Stakers"},{name:"Retail/Unknown",pct:"~70.94%",shares:"~85.2M ETH",type:"Public"}]},
+  SOL:{ticker:"SOL",name:"SOLANA",exchange:"CRYPTO",assetType:"Crypto",currency:"USD",sector:"Crypto",industry:"Smart Contracts",price:"178.42",change:"+6.84",changePct:"+3.99%",open:"171.58",high:"181.20",low:"170.44",volume:"4820000000",mktcap:"82400000000",pe:"N/A",estPe:"N/A",eps:"N/A",estEps:"N/A",peg:"N/A",divYield:"~7.0% (staking)",divNote:"SOL staking yields ~7% APY. Not a traditional dividend.",website:"solana.com",headquarters:"Decentralized",employees:"N/A",ceo:"Anatoly Yakovenko",ceoTitle:"Co-Founder",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+624.8%",betaVsSPX:"2.44",h52:"259.96",h52date:"11/23/24",l52:"18.44",l52date:"01/23/24",ytd:"+88.4%",px1d:"+6.84 / +3.99%",sharesOut:"461M SOL",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"Cryptocurrency / Layer 1",description:"Solana is a high-performance blockchain supporting smart contracts and DeFi. Known for high throughput (~65,000 TPS) and low transaction costs.",ownership:[{name:"Solana Foundation",pct:"~12.4%",shares:"~57M SOL",type:"Foundation"},{name:"Validators",pct:"~68.4%",shares:"~315M SOL",type:"Stakers"},{name:"Venture Capital",pct:"~8.2%",shares:"~38M SOL",type:"VC"},{name:"Retail",pct:"~11.0%",shares:"~51M SOL",type:"Public"},{name:"FTX Estate",pct:"~2.1%",shares:"~9.7M SOL",type:"Legacy"}]},
+  SPX:{ticker:"SPX",name:"S&P 500 INDEX",exchange:"INDEX",assetType:"Index",currency:"USD",sector:"Index",industry:"Broad Market",price:"5248.30",change:"+44.10",changePct:"+0.85%",open:"5204.20",high:"5261.80",low:"5196.40",volume:"N/A",mktcap:"N/A",pe:"23.4",estPe:"20.8",eps:"224.27",estEps:"252.33",peg:"N/A",divYield:"1.38%",divNote:"Blended dividend yield of S&P 500 index components.",website:"spglobal.com",headquarters:"New York, NY, USA",employees:"N/A",ceo:"N/A",ceoTitle:"N/A",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+29.8%",betaVsSPX:"1.00",h52:"5321.41",h52date:"07/16/24",l52:"4103.78",l52date:"10/27/23",ytd:"+14.8%",px1d:"+44.10 / +0.85%",sharesOut:"N/A",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"US Equity Index / Large Cap Blend",description:"The S&P 500 tracks 500 large-cap US companies across all sectors, representing ~80% of total US equity market cap. The definitive benchmark for US equity performance.",ownership:[{name:"Apple (AAPL)",pct:"6.88%",shares:"Top 1",type:"Component"},{name:"Microsoft (MSFT)",pct:"6.42%",shares:"Top 2",type:"Component"},{name:"NVIDIA (NVDA)",pct:"5.88%",shares:"Top 3",type:"Component"},{name:"Amazon (AMZN)",pct:"3.64%",shares:"Top 4",type:"Component"},{name:"Meta (META)",pct:"2.54%",shares:"Top 5",type:"Component"}]},
+  NDX:{ticker:"NDX",name:"NASDAQ-100 INDEX",exchange:"INDEX",assetType:"Index",currency:"USD",sector:"Index",industry:"Technology-Heavy",price:"18422.80",change:"+224.40",changePct:"+1.23%",open:"18198.40",high:"18488.20",low:"18122.80",volume:"N/A",mktcap:"N/A",pe:"30.2",estPe:"26.4",eps:"610.02",estEps:"697.83",peg:"N/A",divYield:"0.62%",divNote:"Blended dividend yield of Nasdaq-100 components.",website:"nasdaq.com",headquarters:"New York, NY, USA",employees:"N/A",ceo:"N/A",ceoTitle:"N/A",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+37.4%",betaVsSPX:"1.22",h52:"20690.97",h52date:"07/10/24",l52:"13520.96",l52date:"10/27/23",ytd:"+18.2%",px1d:"+224.40 / +1.23%",sharesOut:"N/A",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"US Equity Index / Tech-Heavy",description:"The Nasdaq-100 tracks the 100 largest non-financial companies on the Nasdaq exchange, heavily weighted toward technology.",ownership:[{name:"Microsoft (MSFT)",pct:"8.81%",shares:"Top 1",type:"Component"},{name:"Apple (AAPL)",pct:"8.44%",shares:"Top 2",type:"Component"},{name:"NVIDIA (NVDA)",pct:"7.55%",shares:"Top 3",type:"Component"},{name:"Amazon (AMZN)",pct:"4.42%",shares:"Top 4",type:"Component"},{name:"Meta (META)",pct:"4.01%",shares:"Top 5",type:"Component"}]},
+  IBOV:{ticker:"IBOV",name:"IBOVESPA INDEX",exchange:"B3",assetType:"Index",currency:"BRL",sector:"Index",industry:"Broad Market BR",price:"128420",change:"-842",changePct:"-0.65%",open:"129262",high:"129580",low:"128011",volume:"N/A",mktcap:"N/A",pe:"8.4",estPe:"7.8",eps:"15288",estEps:"16464",peg:"N/A",divYield:"6.12%",divNote:"Blended dividend yield do Ibovespa.",website:"b3.com.br",headquarters:"São Paulo, SP, Brasil",employees:"N/A",ceo:"N/A",ceoTitle:"N/A",cfo:"N/A",cfoTitle:"N/A",totRet12m:"-4.2%",betaVsSPX:"0.44",h52:"137097",h52date:"05/13/24",l52:"109897",l52date:"01/17/24",ytd:"-2.8%",px1d:"-842 / -0.65%",sharesOut:"N/A",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"BR Equity Index / Large Cap",description:"O Ibovespa é o principal índice de ações da bolsa brasileira (B3), composto pelas ações mais líquidas e de maior representatividade do mercado de capitais brasileiro.",ownership:[{name:"Vale (VALE3)",pct:"13.44%",shares:"Top 1",type:"Componente"},{name:"Petrobras (PETR4)",pct:"11.22%",shares:"Top 2",type:"Componente"},{name:"Itaú (ITUB4)",pct:"8.88%",shares:"Top 3",type:"Componente"},{name:"Bradesco (BBDC4)",pct:"4.44%",shares:"Top 4",type:"Componente"},{name:"WEG (WEGE3)",pct:"4.01%",shares:"Top 5",type:"Componente"}]},
+  XAUUSD:{ticker:"XAUUSD",name:"GOLD SPOT USD/OZ",exchange:"CMDTY",assetType:"Commodity",currency:"USD",sector:"Commodities",industry:"Metals",price:"2338.40",change:"+12.80",changePct:"+0.55%",open:"2325.60",high:"2344.10",low:"2320.80",volume:"N/A",mktcap:"N/A",pe:"N/A",estPe:"N/A",eps:"N/A",estEps:"N/A",peg:"N/A",divYield:"N/A",divNote:"Commodity — no dividends.",website:"gold.org",headquarters:"Global",employees:"N/A",ceo:"N/A",ceoTitle:"N/A",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+18.4%",betaVsSPX:"-0.12",h52:"2449.89",h52date:"07/17/24",l52:"1810.80",l52date:"10/02/23",ytd:"+13.8%",px1d:"+12.80 / +0.55%",sharesOut:"N/A",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"Precious Metal / Safe Haven",description:"Gold spot price in USD per troy ounce. A traditional safe-haven asset and inflation hedge. Central banks hold gold as a reserve asset. Traded globally 24/7.",ownership:[{name:"Central Banks",pct:"~17%",shares:"~35,700t",type:"Official"},{name:"ETFs (GLD, IAU...)",pct:"~4%",shares:"~3,100t",type:"ETF"},{name:"Jewelry",pct:"~46%",shares:"~95,000t",type:"Consumer"},{name:"Investment/Retail",pct:"~22%",shares:"~45,000t",type:"Public"},{name:"Industrial",pct:"~11%",shares:"~22,000t",type:"Industrial"}]},
+  USDBRL:{ticker:"USDBRL",name:"USD/BRL FX RATE",exchange:"FX",assetType:"FX",currency:"BRL",sector:"FX",industry:"Currency",price:"4.9842",change:"+0.0124",changePct:"+0.25%",open:"4.9718",high:"4.9988",low:"4.9644",volume:"N/A",mktcap:"N/A",pe:"N/A",estPe:"N/A",eps:"N/A",estEps:"N/A",peg:"N/A",divYield:"N/A",divNote:"FX pair — no dividends. SELIC rate: 10.50% | Fed Funds: 5.25-5.50%",website:"bcb.gov.br",headquarters:"Global",employees:"N/A",ceo:"N/A",ceoTitle:"N/A",cfo:"N/A",cfoTitle:"N/A",totRet12m:"+8.4%",betaVsSPX:"0.22",h52:"5.1420",h52date:"07/05/24",l52:"4.7010",l52date:"12/14/23",ytd:"+3.4%",px1d:"+0.0124 / +0.25%",sharesOut:"N/A",siOfFloat:"N/A",daysToCover:"N/A",figi:"N/A",classification:"FX Pair / Emerging Market",description:"The USD/BRL exchange rate shows how many Brazilian Reais are needed to buy one US Dollar. Influenced by Brazil's SELIC rate, trade balance, commodity prices, and global risk appetite.",ownership:[{name:"Banco Central do Brasil",pct:"Regulator",shares:"~$350B reserves",type:"Central Bank"},{name:"Commercial Banks",pct:"Market Making",shares:"N/A",type:"Banks"},{name:"Exporters/Importers",pct:"Hedging",shares:"N/A",type:"Corporate"},{name:"Foreign Investors",pct:"Carry Trade",shares:"N/A",type:"International"},{name:"Retail Speculators",pct:"Minor",shares:"N/A",type:"Public"}]},
+};
+
+const REL_INDICES = {
+  "US":[{name:"S&P 500",val:"5,248.30",chg:"+0.85%",up:true},{name:"NASDAQ",val:"18,422.80",chg:"+1.23%",up:true},{name:"DJIA",val:"39,114.40",chg:"+0.44%",up:true},{name:"Russell 2000",val:"2,042.55",chg:"-0.21%",up:false},{name:"VIX",val:"13.44",chg:"-3.20%",up:false}],
+  "B3":[{name:"Ibovespa",val:"128,420",chg:"-0.65%",up:false},{name:"IFIX",val:"2,942.80",chg:"+0.11%",up:true},{name:"SMLL",val:"1,844.20",chg:"-0.88%",up:false},{name:"IDIV",val:"8,214.40",chg:"+0.22%",up:true},{name:"USD/BRL",val:"4.9842",chg:"+0.25%",up:true}],
+  "CRYPTO":[{name:"BTC",val:"$67,842",chg:"+1.87%",up:true},{name:"ETH",val:"$3,544",chg:"+2.55%",up:true},{name:"SOL",val:"$178.42",chg:"+3.99%",up:true},{name:"Crypto MCap",val:"$2.44T",chg:"+1.44%",up:true},{name:"BTC Dominance",val:"54.6%",chg:"+0.12%",up:true}],
+  "INDEX":[{name:"S&P 500",val:"5,248.30",chg:"+0.85%",up:true},{name:"NASDAQ-100",val:"18,422.80",chg:"+1.23%",up:true},{name:"FTSE 100",val:"8,220.10",chg:"+0.32%",up:true},{name:"DAX",val:"18,442.30",chg:"+0.18%",up:true},{name:"Nikkei 225",val:"39,522.40",chg:"-0.44%",up:false}],
+  "CMDTY":[{name:"Gold",val:"$2,338",chg:"+0.55%",up:true},{name:"Silver",val:"$29.42",chg:"+0.88%",up:true},{name:"WTI Oil",val:"$82.14",chg:"-0.44%",up:false},{name:"Brent Oil",val:"$86.20",chg:"-0.38%",up:false},{name:"Copper",val:"$4.48",chg:"+1.12%",up:true}],
+  "FX":[{name:"EUR/USD",val:"1.0844",chg:"+0.12%",up:true},{name:"GBP/USD",val:"1.2644",chg:"+0.08%",up:true},{name:"USD/JPY",val:"151.44",chg:"+0.22%",up:true},{name:"USD/BRL",val:"4.9842",chg:"+0.25%",up:true},{name:"DXY",val:"104.44",chg:"-0.11%",up:false}],
+};
+
+const REL_VALUE_PEERS = {
+  "Technology":["NVDA","AAPL","MSFT","AMD","GOOGL"],
+  "Communication Services":["META","GOOGL","NFLX"],
+  "Financials":["JPM"],
+  "Consumer Discretionary":["TSLA","AMZN"],
+  "Energia":["PETR4"],"Materiais":["VALE3"],
+  "Financeiro":["ITUB4","BBDC4"],
+  "Crypto":["BTC","ETH","SOL"],
+  "Index":["SPX","NDX","IBOV"],
+  "Indústria":["WEGE3"],
 };
 
 const getFallback = sym => {
   const s=sym.toUpperCase();
   if(STOCKS[s])return STOCKS[s];
   const price=(80+Math.random()*120).toFixed(2);
-  return{ticker:s,name:`${s} CORPORATION`,exchange:"US",price,change:"+0.50",changePct:"+0.50%",open:price,high:(parseFloat(price)+2).toFixed(2),low:(parseFloat(price)-2).toFixed(2),volume:"5000000",mktcap:"50000000000",pe:"22.0",estPe:"19.5",eps:"4.55",estEps:"5.13",peg:"1.85",divYield:"1.20%",divNote:"Dividend info unavailable.",website:`www.${s.toLowerCase()}.com`,headquarters:"United States",employees:"10,000",ceo:"N/A",ceoTitle:"CEO",cfo:"N/A",cfoTitle:"CFO",totRet12m:"+12.0%",betaVsSPX:"1.10",h52:(parseFloat(price)*1.2).toFixed(2),h52date:"08/10/24",l52:(parseFloat(price)*0.75).toFixed(2),l52date:"02/15/24",ytd:"+8.0%",px1d:"+0.50 / +0.50%",sharesOut:"500M / 490M",siOfFloat:"2.00% / 1.50%",daysToCover:"1.5",figi:"BBG000XXXXXX",classification:"GICS 9999 / General",description:`${s} is a publicly traded company. Try: NVDA, AAPL, MSFT, TSLA, META, AMZN, GOOGL.`};
+  return{ticker:s,name:`${s} CORPORATION`,exchange:"US",assetType:"Equity",currency:"USD",sector:"General",industry:"General",price,change:"+0.50",changePct:"+0.50%",open:price,high:(parseFloat(price)+2).toFixed(2),low:(parseFloat(price)-2).toFixed(2),volume:"5000000",mktcap:"50000000000",pe:"22.0",estPe:"19.5",eps:"4.55",estEps:"5.13",peg:"1.85",divYield:"1.20%",divNote:"Dividend info unavailable.",website:`www.${s.toLowerCase()}.com`,headquarters:"United States",employees:"10,000",ceo:"N/A",ceoTitle:"CEO",cfo:"N/A",cfoTitle:"CFO",totRet12m:"+12.0%",betaVsSPX:"1.10",h52:(parseFloat(price)*1.2).toFixed(2),h52date:"08/10/24",l52:(parseFloat(price)*0.75).toFixed(2),l52date:"02/15/24",ytd:"+8.0%",px1d:"+0.50 / +0.50%",sharesOut:"500M / 490M",siOfFloat:"2.00% / 1.50%",daysToCover:"1.5",figi:"N/A",classification:"N/A",description:`${s} not found. Try: NVDA AAPL MSFT TSLA META AMZN GOOGL AMD JPM NFLX | PETR4 VALE3 ITUB4 BBDC4 WEGE3 | BTC ETH SOL | SPX NDX IBOV | XAUUSD USDBRL`,ownership:[]};
 };
 
-const genSeries=(base,n=120)=>{let p=base*0.55;return Array.from({length:n},()=>{p=p*(1+0.0006+(Math.random()-0.485)*0.02);return p;});};
+const genSeries=(base,n=120)=>{let p=parseFloat(String(base).replace(/,/g,""))*0.55;return Array.from({length:n},()=>{p=p*(1+0.0006+(Math.random()-0.485)*0.02);return p;});};
 
-function LineChart({series,width=420,height=200}){
+function LineChart({series,width=420,height=200,C}){
   const pad={l:8,r:44,t:12,b:32};
   const w=width-pad.l-pad.r,h=height-pad.t-pad.b;
   const minP=Math.min(...series),maxP=Math.max(...series),range=maxP-minP||1;
@@ -88,12 +137,7 @@ function LineChart({series,width=420,height=200}){
         </linearGradient>
         <clipPath id="chartClip"><rect x={pad.l} y={pad.t} width={w} height={h}/></clipPath>
       </defs>
-      {yTicks.map(v=>(
-        <g key={v}>
-          <line x1={pad.l} x2={pad.l+w} y1={py(v)} y2={py(v)} stroke="#1e1e1e" strokeDasharray="1,4"/>
-          <text x={pad.l+w+4} y={py(v)+4} fill={C.textDim} fontSize={9} fontFamily="monospace">{v}</text>
-        </g>
-      ))}
+      {yTicks.map(v=>(<g key={v}><line x1={pad.l} x2={pad.l+w} y1={py(v)} y2={py(v)} stroke={C.border} strokeDasharray="1,4"/><text x={pad.l+w+4} y={py(v)+4} fill={C.textDim} fontSize={9} fontFamily="monospace">{v}</text></g>))}
       <path d={areaPath} fill="url(#areaGrad)" clipPath="url(#chartClip)"/>
       <path d={linePath} fill="none" stroke="#3377cc" strokeWidth={1.5} clipPath="url(#chartClip)"/>
       <line x1={tipX} x2={tipX} y1={pad.t} y2={pad.t+h} stroke="#555" strokeWidth={1} strokeDasharray="2,3"/>
@@ -101,9 +145,7 @@ function LineChart({series,width=420,height=200}){
       <text x={tipX+8} y={tipY-7} fill={C.textDim} fontSize={9} fontFamily="monospace">Apr/24</text>
       <text x={tipX+8} y={tipY+5} fill={C.textWhite} fontSize={10} fontFamily="monospace" fontWeight="bold">${series[tipIdx].toFixed(2)}</text>
       <circle cx={tipX} cy={tipY} r={3} fill="#3377cc" stroke="#6699ee" strokeWidth={1}/>
-      {xLabels.map((lbl,i)=>(
-        <text key={lbl} x={pad.l+(i/(xLabels.length-1))*w} y={height-6} fill={C.textDim} fontSize={8} fontFamily="monospace" textAnchor="middle">{lbl}</text>
-      ))}
+      {xLabels.map((lbl,i)=>(<text key={lbl} x={pad.l+(i/(xLabels.length-1))*w} y={height-6} fill={C.textDim} fontSize={8} fontFamily="monospace" textAnchor="middle">{lbl}</text>))}
     </svg>
   );
 }
@@ -114,20 +156,33 @@ function Sparkline({series,isUp}){
   const px=i=>(i/(series.length-1))*width;
   const py=p=>height-((p-minP)/range)*height;
   const path=series.map((p,i)=>`${i===0?"M":"L"}${px(i).toFixed(1)},${py(p).toFixed(1)}`).join(" ");
-  return <svg width={width} height={height} style={{display:"inline-block",verticalAlign:"middle"}}><path d={path} fill="none" stroke={isUp?C.textGreenBright:C.textRed} strokeWidth={1.5}/></svg>;
+  return <svg width={width} height={height} style={{display:"inline-block",verticalAlign:"middle"}}><path d={path} fill="none" stroke={isUp?"#44dd77":"#ff3333"} strokeWidth={1.5}/></svg>;
 }
 
-function TickerTape(){
+function TickerTape({C}){
   const [offset,setOffset]=useState(0);
-  const tapeData=useMemo(()=>{
-    const syms=["AAPL","MSFT","GOOGL","AMZN","TSLA","META","NVDA","AMD","JPM","BAC","NFLX","V","MA","WMT","DIS"];
-    return syms.map(sym=>{const price=80+Math.random()*400;const change=(Math.random()-0.48)*12;return{sym,price:price.toFixed(2),change:change.toFixed(2),pct:((change/price)*100).toFixed(2),up:change>=0};});
-  },[]);
+  const tapeData=useMemo(()=>[
+    {sym:"NVDA",price:"127.25",change:"+3.42",pct:"2.76",up:true},
+    {sym:"AAPL",price:"189.30",change:"-1.20",pct:"0.63",up:false},
+    {sym:"MSFT",price:"415.80",change:"+5.10",pct:"1.24",up:true},
+    {sym:"TSLA",price:"248.40",change:"+12.75",pct:"5.41",up:true},
+    {sym:"META",price:"527.60",change:"+8.90",pct:"1.71",up:true},
+    {sym:"AMZN",price:"198.75",change:"+2.34",pct:"1.19",up:true},
+    {sym:"GOOGL",price:"172.40",change:"-0.85",pct:"0.49",up:false},
+    {sym:"AMD",price:"162.30",change:"+4.10",pct:"2.59",up:true},
+    {sym:"BTC",price:"67,842",change:"+1,244",pct:"1.87",up:true},
+    {sym:"ETH",price:"3,544",change:"+88",pct:"2.55",up:true},
+    {sym:"PETR4",price:"R$38.42",change:"+0.58",pct:"1.53",up:true},
+    {sym:"VALE3",price:"R$61.85",change:"-0.92",pct:"1.47",up:false},
+    {sym:"IBOV",price:"128,420",change:"-842",pct:"0.65",up:false},
+    {sym:"GOLD",price:"2,338",change:"+12.8",pct:"0.55",up:true},
+    {sym:"USD/BRL",price:"4.9842",change:"+0.012",pct:"0.25",up:true},
+  ],[]);
   useEffect(()=>{const id=setInterval(()=>setOffset(o=>o-0.6),16);return()=>clearInterval(id);},[]);
   const itemW=185,total=tapeData.length*itemW;
   const norm=((offset%total)-total)%total;
   return(
-    <div style={{background:"#080808",borderTop:"1px solid #1a1a1a",height:22,overflow:"hidden",position:"relative",flexShrink:0}}>
+    <div style={{background:"#080808",borderTop:`1px solid ${C.border}`,height:22,overflow:"hidden",position:"relative",flexShrink:0}}>
       <div style={{position:"absolute",display:"flex",transform:`translateX(${norm}px)`,alignItems:"center",height:"100%",whiteSpace:"nowrap"}}>
         {[...tapeData,...tapeData,...tapeData].map((item,i)=>(
           <div key={i} style={{width:itemW,display:"flex",gap:5,alignItems:"center",fontFamily:"monospace",fontSize:10,padding:"0 8px"}}>
@@ -143,38 +198,196 @@ function TickerTape(){
 }
 
 const makeNews=t=>[
-  {id:900,src:"THE MOTL",time:"08:30",text:`Is ${t} Stock Going to $300 After the Meta Platforms Deal?`},
-  {id:899,src:"INVESTIN",time:"08:01",text:`${t} Earnings Preview: A Make-or-Break Moment for the AI Trade`},
+  {id:900,src:"THE MOTL",time:"08:30",text:`Is ${t} Going to New Highs After the Recent AI Surge?`},
+  {id:899,src:"INVESTIN",time:"08:01",text:`${t} Earnings Preview: A Make-or-Break Moment for the Trade`},
   {id:898,src:"BENZINGA",time:"05:37",text:`Stock Market Today: S&P 500, Dow, Nasdaq Futures Rise Ahead of Open`},
-  {id:897,src:"BENZINGA",time:"04:06",text:`China's Top Chipmakers Race To Scale Advanced AI Chips Despite US Curbs`},
+  {id:897,src:"REUTERS",time:"04:06",text:`Global Markets Digest Mixed Signals as Central Banks Signal Divergence`},
   {id:896,src:"THE MOTL",time:"03:10",text:`IT Spending Will Exceed $6 Trillion for the First Time in 2026`},
-  {id:895,src:"BENZINGA",time:"01:34",text:`${t}-Backed Startup Gets $1.5 Billion Funding Boost`},
+  {id:895,src:"REUTERS",time:"01:34",text:`${t} Backed Startup Gets $1.5B Funding Boost From Sovereign Fund`},
+  {id:894,src:"FT",time:"00:58",text:`Fed Officials Signal Patience on Rate Cuts as Inflation Stays Sticky`},
+  {id:893,src:"BLOOMBERG",time:"00:12",text:`China Tech Crackdown Fears Resurface as Regulators Probe Major Platform`},
 ];
 
 const TABS=["HOME","OVERVIEW","ANALYSIS","REL INDEX","REL VALUE","NEWS","OWNERSHIP"];
 
-function Row({num,label,cmd}){
-  return <div style={{background:"#161616",borderBottom:"1px solid #1e1e1e",padding:"3px 10px",display:"flex",gap:4,alignItems:"center"}}>
+function Row({num,label,cmd,C}){
+  return <div style={{background:C.rowBg,borderBottom:`1px solid ${C.border}`,padding:"3px 10px",display:"flex",gap:4,alignItems:"center"}}>
     <span style={{color:"#555",fontSize:11}}>{num})</span>
     <span style={{color:C.textWhite,fontSize:11}}>{label}</span>
     {cmd&&<span style={{color:C.textBlue,fontSize:10}}>| {cmd} »</span>}
   </div>;
 }
-
-function DRow({label,value,valueColor,children,noColon,indent}){
-  return <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 10px",borderBottom:"1px solid #161616"}}>
-    {!noColon?<span style={{color:"#666",fontSize:11,paddingLeft:indent?14:0}}>{label}</span>:<span/>}
+function DRow({label,value,valueColor,children,noColon,indent,C}){
+  return <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"3px 10px",borderBottom:`1px solid ${C.border}`}}>
+    {!noColon?<span style={{color:C.textDim,fontSize:11,paddingLeft:indent?14:0}}>{label}</span>:<span/>}
     {children||<span style={{color:valueColor||"#aaaaaa",fontSize:11,fontFamily:"monospace"}}>{value}</span>}
   </div>;
 }
 
+function HomeTab({C,onLoad}){
+  const cats=[
+    {label:"US EQUITIES",items:[{sym:"NVDA",name:"NVIDIA",price:"127.25",chg:"+2.76%",up:true},{sym:"AAPL",name:"APPLE",price:"189.30",chg:"-0.63%",up:false},{sym:"MSFT",name:"MICROSOFT",price:"415.80",chg:"+1.24%",up:true},{sym:"TSLA",name:"TESLA",price:"248.40",chg:"+5.41%",up:true},{sym:"META",name:"META",price:"527.60",chg:"+1.71%",up:true},{sym:"AMZN",name:"AMAZON",price:"198.75",chg:"+1.19%",up:true},{sym:"GOOGL",name:"ALPHABET",price:"172.40",chg:"-0.49%",up:false},{sym:"AMD",name:"AMD",price:"162.30",chg:"+2.59%",up:true},{sym:"JPM",name:"JPMORGAN",price:"224.10",chg:"+0.83%",up:true},{sym:"NFLX",name:"NETFLIX",price:"742.80",chg:"+1.25%",up:true}]},
+    {label:"B3 — BRASIL",items:[{sym:"PETR4",name:"PETROBRAS",price:"R$38.42",chg:"+1.53%",up:true},{sym:"VALE3",name:"VALE",price:"R$61.85",chg:"-1.47%",up:false},{sym:"ITUB4",name:"ITAÚ UNIBANCO",price:"R$35.10",chg:"+1.21%",up:true},{sym:"BBDC4",name:"BRADESCO",price:"R$13.85",chg:"-1.49%",up:false},{sym:"WEGE3",name:"WEG",price:"R$52.14",chg:"+1.72%",up:true}]},
+    {label:"CRYPTO",items:[{sym:"BTC",name:"BITCOIN",price:"$67,842",chg:"+1.87%",up:true},{sym:"ETH",name:"ETHEREUM",price:"$3,544",chg:"+2.55%",up:true},{sym:"SOL",name:"SOLANA",price:"$178.42",chg:"+3.99%",up:true}]},
+    {label:"INDICES",items:[{sym:"SPX",name:"S&P 500",price:"5,248.30",chg:"+0.85%",up:true},{sym:"NDX",name:"NASDAQ-100",price:"18,422.80",chg:"+1.23%",up:true},{sym:"IBOV",name:"IBOVESPA",price:"128,420",chg:"-0.65%",up:false}]},
+    {label:"CMDTY & FX",items:[{sym:"XAUUSD",name:"GOLD SPOT",price:"$2,338",chg:"+0.55%",up:true},{sym:"USDBRL",name:"USD/BRL",price:"4.9842",chg:"+0.25%",up:true}]},
+  ];
+  return(
+    <div style={{flex:1,overflowY:"auto"}}>
+      <div style={{padding:"5px 14px",borderBottom:`1px solid ${C.border}`}}>
+        <span style={{color:C.textYellow,fontWeight:"bold",fontSize:11}}>▐ AURA TERMINAL — MARKET OVERVIEW </span>
+        <span style={{color:C.textDim,fontSize:10}}>| Click any ticker to load full data | Press [T] to toggle theme</span>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
+        {cats.map(cat=>(
+          <div key={cat.label} style={{borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`}}>
+            <div style={{background:C.rowBg,borderBottom:`1px solid ${C.border}`,padding:"3px 10px"}}>
+              <span style={{color:C.textYellow,fontSize:10,fontWeight:"bold"}}>{cat.label}</span>
+            </div>
+            {cat.items.map(item=>(
+              <div key={item.sym} onClick={()=>onLoad(item.sym)}
+                style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 10px",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}
+                onMouseEnter={e=>e.currentTarget.style.background=C.bgSection}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <span style={{color:C.textBlue,fontSize:11,fontWeight:"bold",minWidth:55}}>{item.sym}</span>
+                <span style={{color:C.textDimMid,fontSize:10,flex:1,paddingLeft:6}}>{item.name}</span>
+                <span style={{color:C.textWhite,fontSize:11,fontFamily:"monospace",marginRight:8}}>{item.price}</span>
+                <span style={{color:item.up?C.textGreenBright:C.textRed,fontSize:11,fontFamily:"monospace",minWidth:55,textAlign:"right"}}>{item.chg}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RelIndexTab({data,C}){
+  const exchange=data?.exchange||"US";
+  const relData=REL_INDICES[exchange]||REL_INDICES["US"];
+  const globalMkts=[{name:"S&P 500",val:"5,248.30",chg:"+0.85%",up:true},{name:"NASDAQ",val:"18,422.80",chg:"+1.23%",up:true},{name:"FTSE 100",val:"8,220.10",chg:"+0.32%",up:true},{name:"DAX",val:"18,442.30",chg:"+0.18%",up:true},{name:"Nikkei",val:"39,522.40",chg:"-0.44%",up:false},{name:"Shanghai",val:"3,088.40",chg:"-0.22%",up:false},{name:"Ibovespa",val:"128,420",chg:"-0.65%",up:false}];
+  const sectors=[{name:"Technology",chg:"+1.44%",up:true},{name:"Financials",chg:"+0.82%",up:true},{name:"Healthcare",chg:"+0.21%",up:true},{name:"Energy",chg:"-0.44%",up:false},{name:"Consumer Disc.",chg:"+1.12%",up:true},{name:"Industrials",chg:"+0.32%",up:true},{name:"Utilities",chg:"-0.88%",up:false},{name:"Real Estate",chg:"-0.22%",up:false}];
+  return(
+    <div style={{flex:1,overflowY:"auto"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
+        <div style={{borderRight:`1px solid ${C.border}`}}>
+          <Row num="1" label={`Related — ${exchange} Market`} C={C}/>
+          {relData.map((r,i)=>(<DRow key={i} label={r.name} C={C}><div style={{display:"flex",gap:12}}><span style={{color:C.textWhite,fontSize:11,fontFamily:"monospace"}}>{r.val}</span><span style={{color:r.up?C.textGreenBright:C.textRed,fontSize:11}}>{r.chg}</span></div></DRow>))}
+        </div>
+        <div style={{borderRight:`1px solid ${C.border}`}}>
+          <Row num="2" label="Global Markets" C={C}/>
+          {globalMkts.map((r,i)=>(<DRow key={i} label={r.name} C={C}><div style={{display:"flex",gap:12}}><span style={{color:C.textWhite,fontSize:11,fontFamily:"monospace"}}>{r.val}</span><span style={{color:r.up?C.textGreenBright:C.textRed,fontSize:11}}>{r.chg}</span></div></DRow>))}
+        </div>
+        <div>
+          <Row num="3" label="US Sector Performance" C={C}/>
+          {sectors.map((s,i)=>(<DRow key={i} label={s.name} C={C}><span style={{color:s.up?C.textGreenBright:C.textRed,fontSize:11,fontFamily:"monospace"}}>{s.up?"▲":"▼"} {s.chg}</span></DRow>))}
+          <Row num="4" label="Interest Rates" C={C}/>
+          {[["Fed Funds","5.25-5.50%"],["US 10Y","4.42%"],["US 2Y","4.88%"],["SELIC","10.50%"],["ECB","4.50%"]].map(([l,v])=>(<DRow key={l} label={l} value={v} C={C}/>))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RelValueTab({data,C}){
+  const sector=data?.sector||"Technology";
+  const peerSyms=REL_VALUE_PEERS[sector]||REL_VALUE_PEERS["Technology"];
+  const peers=peerSyms.map(sym=>STOCKS[sym]?{...STOCKS[sym]}:null).filter(Boolean);
+  return(
+    <div style={{flex:1,overflowY:"auto"}}>
+      <Row num="1" label={`Peer Comparison — ${sector}`} C={C}/>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"monospace",fontSize:11}}>
+          <thead>
+            <tr style={{background:C.rowBg,borderBottom:`1px solid ${C.border}`}}>
+              {["Ticker","Name","Price","Chg%","P/E","Est P/E","Mkt Cap","52W Hi","52W Lo","YTD","Div","Beta"].map(h=>(<th key={h} style={{padding:"4px 8px",textAlign:"left",color:C.textYellow,fontWeight:"bold",borderRight:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>{h}</th>))}
+            </tr>
+          </thead>
+          <tbody>
+            {peers.map(p=>{
+              const isUp=parseFloat(p.change)>=0;
+              const isCurrent=data&&p.ticker===data.ticker;
+              return(
+                <tr key={p.ticker} style={{borderBottom:`1px solid ${C.border}`,background:isCurrent?C.bgSection:"transparent"}}>
+                  <td style={{padding:"3px 8px",color:C.textBlue,fontWeight:"bold",borderRight:`1px solid ${C.border}`}}>{p.ticker}</td>
+                  <td style={{padding:"3px 8px",color:C.textDimMid,borderRight:`1px solid ${C.border}`,maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</td>
+                  <td style={{padding:"3px 8px",color:C.textWhite,borderRight:`1px solid ${C.border}`}}>{p.currency==="BRL"?"R$":"$"}{p.price}</td>
+                  <td style={{padding:"3px 8px",color:isUp?C.textGreenBright:C.textRed,borderRight:`1px solid ${C.border}`}}>{p.changePct}</td>
+                  <td style={{padding:"3px 8px",color:C.textWhite,borderRight:`1px solid ${C.border}`}}>{p.pe}</td>
+                  <td style={{padding:"3px 8px",color:C.textWhite,borderRight:`1px solid ${C.border}`}}>{p.estPe}</td>
+                  <td style={{padding:"3px 8px",color:C.textWhite,borderRight:`1px solid ${C.border}`}}>{formatMarketCap(p.mktcap)}</td>
+                  <td style={{padding:"3px 8px",color:C.textGreenBright,borderRight:`1px solid ${C.border}`}}>{p.h52}</td>
+                  <td style={{padding:"3px 8px",color:C.textRed,borderRight:`1px solid ${C.border}`}}>{p.l52}</td>
+                  <td style={{padding:"3px 8px",color:parseFloat(p.ytd)>=0?C.textGreenBright:C.textRed,borderRight:`1px solid ${C.border}`}}>{p.ytd}</td>
+                  <td style={{padding:"3px 8px",color:C.textCyan,borderRight:`1px solid ${C.border}`}}>{p.divYield}</td>
+                  <td style={{padding:"3px 8px",color:C.textWhite}}>{p.betaVsSPX}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{padding:"6px 14px",borderTop:`1px solid ${C.border}`}}><span style={{color:C.textDim,fontSize:10}}>* Highlighted = current security | Data is indicative</span></div>
+    </div>
+  );
+}
+
+function OwnershipTab({data,C}){
+  const owners=data?.ownership||[];
+  return(
+    <div style={{flex:1,overflowY:"auto"}}>
+      <Row num="1" label={`Major Shareholders — ${data?.ticker}`} cmd="OWN" C={C}/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+        <div style={{borderRight:`1px solid ${C.border}`}}>
+          <div style={{background:C.rowBg,borderBottom:`1px solid ${C.border}`,padding:"3px 10px",display:"flex",gap:8}}>
+            {["#","Holder","% Owned","Shares","Type"].map(h=>(<span key={h} style={{color:C.textYellow,fontSize:10,fontWeight:"bold",flex:h==="#"?0:1,minWidth:h==="#"?20:0}}>{h}</span>))}
+          </div>
+          {owners.map((o,i)=>(
+            <div key={i} style={{display:"flex",gap:8,padding:"4px 10px",borderBottom:`1px solid ${C.border}`,alignItems:"center"}}>
+              <span style={{color:C.textDim,fontSize:11,minWidth:20}}>{i+1}</span>
+              <span style={{color:C.textWhite,fontSize:11,flex:2}}>{o.name}</span>
+              <span style={{color:C.textGreenBright,fontSize:11,fontFamily:"monospace",flex:1}}>{o.pct}</span>
+              <span style={{color:C.textDimMid,fontSize:10,flex:1,fontFamily:"monospace"}}>{o.shares}</span>
+              <span style={{color:C.textCyan,fontSize:10,flex:1}}>{o.type}</span>
+            </div>
+          ))}
+          {owners.length===0&&<div style={{padding:"12px 14px",color:C.textDim,fontSize:11}}>No ownership data available.</div>}
+        </div>
+        <div>
+          <Row num="2" label="Ownership Breakdown" C={C}/>
+          <div style={{padding:"8px 14px"}}>
+            {[{label:"Institutional",val:"68.4%",w:"68%",color:"#4488ee"},{label:"Insider / Management",val:"14.2%",w:"14%",color:"#ddaa00"},{label:"Retail / Public",val:"12.1%",w:"12%",color:"#33cc66"},{label:"Short Interest",val:"3.1%",w:"3%",color:"#ff3333"},{label:"ETF Holdings",val:"2.2%",w:"2%",color:"#33bbbb"}].map(b=>(
+              <div key={b.label} style={{marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{color:C.textDimMid,fontSize:10}}>{b.label}</span>
+                  <span style={{color:b.color,fontSize:10,fontFamily:"monospace"}}>{b.val}</span>
+                </div>
+                <div style={{background:"#1a1a1a",height:6,borderRadius:1}}>
+                  <div style={{background:b.color,height:"100%",width:b.w,borderRadius:1,opacity:0.8}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Row num="3" label="Short Interest" C={C}/>
+          <DRow label="Short % of Float" value={data?.siOfFloat?.split("/")[0]?.trim()||"N/A"} C={C}/>
+          <DRow label="Days to Cover" value={data?.daysToCover||"N/A"} C={C}/>
+          <DRow label="Shares Outstanding" value={data?.sharesOut?.split("/")[0]?.trim()||"N/A"} C={C}/>
+          <DRow label="Float Shares" value={data?.sharesOut?.split("/")[1]?.trim()||"N/A"} C={C}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App(){
   const [tickerInput,setTickerInput]=useState("NVDA");
-  const [activeTab,setActiveTab]=useState(1);
+  const [activeTab,setActiveTab]=useState(0);
   const [loading,setLoading]=useState(false);
   const [data,setData]=useState(null);
   const [series,setSeries]=useState(()=>genSeries(127));
   const [clock,setClock]=useState(new Date());
+  const [themeKey,setThemeKey]=useState("dark");
+  const C=THEMES[themeKey];
 
   useEffect(()=>{const id=setInterval(()=>setClock(new Date()),1000);return()=>clearInterval(id);},[]);
 
@@ -183,19 +396,25 @@ function App(){
     const id=setInterval(()=>{
       setData(d=>{
         if(!d)return d;
-        const base=parseFloat(d.price);
+        const base=parseFloat(String(d.price).replace(/,/g,""));
         const delta=(Math.random()-0.499)*base*0.0002;
-        const np=(base+delta).toFixed(2);
-        const origOpen=parseFloat(d.open);
-        const nc=parseFloat(np)-origOpen;
-        return{...d,price:np,change:(nc>=0?"+":"")+nc.toFixed(2),changePct:(nc>=0?"+":"")+((nc/origOpen)*100).toFixed(2)+"%"};
+        const np=base+delta;
+        const origOpen=parseFloat(String(d.open).replace(/,/g,""));
+        const nc=np-origOpen;
+        const fmt=np>1000?np.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}):np.toFixed(2);
+        return{...d,price:fmt,change:(nc>=0?"+":"")+nc.toFixed(2),changePct:(nc>=0?"+":"")+((nc/origOpen)*100).toFixed(2)+"%"};
       });
     },3000);
     return()=>clearInterval(id);
   },[data?.ticker]);
 
   useEffect(()=>{
-    const handler=e=>{if(e.target.tagName==="INPUT")return;const n=parseInt(e.key);if(!isNaN(n)&&n>=0&&n<=6)setActiveTab(n);};
+    const handler=e=>{
+      if(e.target.tagName==="INPUT")return;
+      const n=parseInt(e.key);
+      if(!isNaN(n)&&n>=0&&n<=6)setActiveTab(n);
+      if(e.key==="t"||e.key==="T")setThemeKey(k=>k==="dark"?"light":"dark");
+    };
     window.addEventListener("keydown",handler);
     return()=>window.removeEventListener("keydown",handler);
   },[]);
@@ -203,169 +422,175 @@ function App(){
   const load=useCallback(sym=>{
     const s=sym.trim().toUpperCase();if(!s)return;
     setLoading(true);
-    setTimeout(()=>{const d=getFallback(s);setData(d);setSeries(genSeries(parseFloat(d.price)));setActiveTab(1);setLoading(false);},500);
+    setTimeout(()=>{const d=getFallback(s);setData(d);setSeries(genSeries(parseFloat(String(d.price).replace(/,/g,""))));setActiveTab(1);setLoading(false);},500);
   },[]);
 
   useEffect(()=>{load("NVDA");},[]);
 
   const fmt2=n=>String(n).padStart(2,"0");
   const timeStr=`${fmt2(clock.getHours())}:${fmt2(clock.getMinutes())}:${fmt2(clock.getSeconds())}`;
-  const isUp=data?parseFloat(data.change)>=0:true;
+  const isUp=data?parseFloat(String(data.change).replace(/,/g,""))>=0:true;
   const news=makeNews(data?.ticker||"NVDA");
-  const valBg=v=>parseFloat(v)>=0?C.textGreenBright:C.textRed;
+  const currSym=data?.currency==="BRL"?"R$":"$";
+
+  const tabContent=()=>{
+    if(!data||loading)return null;
+    switch(activeTab){
+      case 0:return <HomeTab C={C} onLoad={load}/>;
+      case 1:return(
+        <div style={{flex:1,overflowY:"auto"}}>
+          <div style={{padding:"8px 14px 0",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
+              <span style={{color:C.textYellow,fontSize:14,fontWeight:"bold",letterSpacing:1}}>{data.name}</span>
+              <span style={{color:C.textDim,fontSize:10}}>FIGI {data.figi}</span>
+            </div>
+            <div style={{display:"flex",gap:16,marginBottom:4}}>
+              <span style={{color:C.textDim,fontSize:10}}>Sector: <span style={{color:C.textCyan}}>{data.sector}</span></span>
+              <span style={{color:C.textDim,fontSize:10}}>Industry: <span style={{color:C.textCyan}}>{data.industry}</span></span>
+              <span style={{color:C.textDim,fontSize:10}}>Type: <span style={{color:C.textCyan}}>{data.assetType}</span></span>
+              <span style={{color:C.textDim,fontSize:10}}>Currency: <span style={{color:C.textCyan}}>{data.currency}</span></span>
+            </div>
+            <div style={{color:C.textDimMid,fontSize:11,lineHeight:1.75,paddingBottom:10}}>{data.description}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{borderRight:`1px solid ${C.border}`}}>
+              <Row num="8" label="Price Chart" cmd="GP" C={C}/>
+              <div style={{background:C.bgChart,padding:"4px 0 0"}}><LineChart series={series} width={420} height={200} C={C}/></div>
+            </div>
+            <div style={{borderRight:`1px solid ${C.border}`}}>
+              <Row num="9" label="Estimates" cmd="EE" C={C}/>
+              <DRow label="P/E" value={data.pe} C={C}/>
+              <DRow label="Est P/E" value={data.estPe} C={C}/>
+              <DRow label="T12M EPS" value={`${currSym}${data.eps}`} C={C}/>
+              <DRow label="Est EPS" value={`${currSym}${data.estEps}`} C={C}/>
+              <DRow label="Est PEG" value={data.peg} C={C}/>
+              <Row num="12" label="Dividend" cmd="DVD" C={C}/>
+              <DRow label="Ind Gross Yield" value={data.divYield} C={C}/>
+              <div style={{padding:"4px 10px"}}><span style={{color:C.textDim,fontSize:10}}>{data.divNote}</span></div>
+            </div>
+            <div>
+              <Row num="13" label="Corporate Info" C={C}/>
+              <DRow label="Website" noColon C={C}><span style={{color:C.textBlue,fontSize:11}}>{data.website}</span></DRow>
+              <DRow label="" value={data.headquarters} indent C={C}/>
+              <DRow label="Employees" value={data.employees} C={C}/>
+              <Row num="15" label="Management" cmd="MGMT" C={C}/>
+              <div style={{padding:"4px 10px"}}>
+                <div style={{color:C.textYellow,fontSize:11,fontWeight:"bold"}}>{data.ceo}</div>
+                <div style={{color:C.textDim,fontSize:10,paddingLeft:14}}>{data.ceoTitle}</div>
+              </div>
+              <div style={{padding:"2px 10px 4px"}}>
+                <div style={{color:C.textYellow,fontSize:11}}>{data.cfo}</div>
+                <div style={{color:C.textDim,fontSize:10,paddingLeft:14}}>{data.cfoTitle}</div>
+              </div>
+              <div style={{borderTop:`1px solid ${C.border}`}}>
+                <DRow label="12M Tot Ret" value={data.totRet12m} valueColor={parseFloat(data.totRet12m)>=0?C.textGreenBright:C.textRed} C={C}/>
+                <DRow label="Beta vs SPX" value={data.betaVsSPX} C={C}/>
+                <DRow label="52W High" value={data.h52} valueColor={C.textGreenBright} C={C}/>
+                <DRow label="52W Low" value={data.l52} valueColor={C.textRed} C={C}/>
+              </div>
+            </div>
+          </div>
+          {news.map(n=>(<div key={n.id} style={{display:"flex",gap:8,padding:"3px 14px",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}><span style={{color:C.textDim,fontSize:10,minWidth:28}}>{n.id}</span><span style={{color:C.textDim,fontSize:10,minWidth:60}}>{n.src} {n.time}</span><span style={{color:C.textBlue,fontSize:10}}>{n.text}</span></div>))}
+        </div>
+      );
+      case 2:return(
+        <div style={{flex:1,overflowY:"auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+            <div style={{borderRight:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`}}>
+              <Row num="1" label="Valuation Multiples" C={C}/>
+              {[["P/E (TTM)",data.pe],["P/S (TTM)",(parseFloat(data.pe)/20).toFixed(2)],["EV/EBITDA",(parseFloat(data.pe)*0.75).toFixed(2)],["P/B",(parseFloat(data.pe)/8).toFixed(2)],["P/FCF",(parseFloat(data.pe)*1.2).toFixed(2)]].map(([l,v])=>(<DRow key={l} label={l} value={v} C={C}/>))}
+            </div>
+            <div style={{borderBottom:`1px solid ${C.border}`}}>
+              <Row num="2" label="Returns & Risk" C={C}/>
+              {[["YTD Return",data.ytd,parseFloat(data.ytd)>=0?C.textGreenBright:C.textRed],["12M Total Return",data.totRet12m,parseFloat(data.totRet12m)>=0?C.textGreenBright:C.textRed],["Beta vs SPX",data.betaVsSPX,C.textWhite],["52W High",data.h52,C.textGreenBright],["52W Low",data.l52,C.textRed]].map(([l,v,col])=>(<DRow key={l} label={l} value={v} valueColor={col} C={C}/>))}
+            </div>
+            <div style={{borderRight:`1px solid ${C.border}`}}>
+              <Row num="3" label="Per Share Data" C={C}/>
+              {[["EPS (TTM)",`${currSym}${data.eps}`],["Est EPS",`${currSym}${data.estEps}`],["Est PEG",data.peg],["Div Yield",data.divYield]].map(([l,v])=>(<DRow key={l} label={l} value={v} C={C}/>))}
+            </div>
+            <div>
+              <Row num="4" label="Capital Structure" C={C}/>
+              {[["Market Cap",formatMarketCap(data.mktcap)],["Shares Out.",data.sharesOut?.split("/")[0]?.trim()],["Float",data.sharesOut?.split("/")[1]?.trim()],["SI % Float",data.siOfFloat?.split("/")[0]?.trim()],["Days to Cover",data.daysToCover]].map(([l,v])=>(<DRow key={l} label={l} value={v} C={C}/>))}
+            </div>
+          </div>
+        </div>
+      );
+      case 3:return <RelIndexTab data={data} C={C}/>;
+      case 4:return <RelValueTab data={data} C={C}/>;
+      case 5:return(
+        <div style={{flex:1,overflowY:"auto"}}>
+          <Row num="1" label={`Latest News — ${data.ticker}`} C={C}/>
+          {news.map(n=>(<div key={n.id} style={{display:"flex",gap:10,padding:"5px 14px",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}><span style={{color:C.textDim,fontSize:10,minWidth:28}}>{n.id}</span><span style={{color:C.textBlue,fontSize:10,minWidth:60}}>{n.src}</span><span style={{color:C.textDim,fontSize:10,minWidth:40}}>{n.time}</span><span style={{color:C.textGreen,fontSize:11}}>{n.text}</span></div>))}
+        </div>
+      );
+      case 6:return <OwnershipTab data={data} C={C}/>;
+      default:return null;
+    }
+  };
 
   return(
     <div style={{background:C.bgMain,height:"100vh",display:"flex",flexDirection:"column",fontFamily:"'Courier New',Courier,monospace",overflow:"hidden"}}>
       <div style={{height:4,background:"linear-gradient(to right,#cc1100,#880000,#330000,#111)",flexShrink:0}}/>
-      <div style={{background:C.bgHeader,borderBottom:"1px solid #222",padding:"6px 14px",display:"flex",alignItems:"center",flexShrink:0}}>
-        <span style={{color:C.textYellow,fontSize:13,fontWeight:"bold",letterSpacing:2,marginRight:"auto"}}>▐ AURA TERMINAL </span>
-        {data&&<span style={{color:"#888",fontSize:11,marginRight:20}}>{data.ticker} {data.exchange} Equity | Company Overview</span>}
+      <div style={{background:C.bgHeader,borderBottom:`1px solid ${C.border}`,padding:"6px 14px",display:"flex",alignItems:"center",flexShrink:0}}>
+        <span style={{color:C.textYellow,fontSize:13,fontWeight:"bold",letterSpacing:2,marginRight:"auto"}}>▐ AURA TERMINAL</span>
+        {data&&<span style={{color:C.textDim,fontSize:11,marginRight:20}}>{data.ticker} {data.exchange} {data.assetType} | {data.classification}</span>}
+        <button onClick={()=>setThemeKey(k=>k==="dark"?"light":"dark")} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.textDim,fontFamily:"monospace",fontSize:9,padding:"1px 8px",cursor:"pointer",marginRight:14}}>
+          {themeKey==="dark"?"☀ LIGHT":"☾ DARK"}
+        </button>
         <span style={{color:C.liveDot,fontSize:10,marginRight:4}}>●</span>
         <span style={{color:C.textWhite,fontSize:11,fontWeight:"bold",marginRight:14}}>LIVE</span>
-        <span style={{color:"#888",fontSize:11}}>{timeStr}</span>
+        <span style={{color:C.textDim,fontSize:11}}>{timeStr}</span>
       </div>
 
       {data&&(
-        <div style={{background:"#0a0a0a",borderBottom:"1px solid #1e1e1e",padding:"5px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,flexWrap:"wrap"}}>
+        <div style={{background:"#0a0a0a",borderBottom:`1px solid ${C.border}`,padding:"5px 14px",display:"flex",alignItems:"center",gap:12,flexShrink:0,flexWrap:"wrap"}}>
           <span style={{color:C.textWhite,fontSize:13,fontWeight:"bold"}}>{data.ticker} {data.exchange}</span>
-          <span style={{color:isUp?C.textGreenBright:C.textRed,fontSize:16,fontWeight:"bold"}}>${data.price}</span>
+          <span style={{color:isUp?C.textGreenBright:C.textRed,fontSize:16,fontWeight:"bold"}}>{currSym}{data.price}</span>
           <span style={{color:isUp?C.textGreenBright:C.textRed,fontSize:12}}>{getChangeSymbol(data.change)} {data.change} ({data.changePct})</span>
           <Sparkline series={series.slice(-25)} isUp={isUp}/>
           <div style={{marginLeft:"auto",display:"flex",gap:0,alignItems:"center"}}>
-            <span style={{color:"#666",fontSize:10}}>Vol </span><span style={{color:C.textWhite,fontSize:10,marginRight:10}}>&nbsp;{formatVolume(data.volume)}</span>
-            <span style={{color:"#666",fontSize:10}}>O </span><span style={{color:C.textWhite,fontSize:10,marginRight:10}}>&nbsp;{data.open}</span>
-            <span style={{color:"#666",fontSize:10}}>H </span><span style={{color:C.textGreenBright,fontSize:10,marginRight:10}}>&nbsp;{data.high}</span>
-            <span style={{color:"#666",fontSize:10}}>L </span><span style={{color:C.textRed,fontSize:10,marginRight:14}}>&nbsp;{data.low}</span>
-            <span style={{color:"#666",fontSize:10}}>Mkt Cap </span><span style={{color:C.textWhite,fontSize:10,marginRight:14}}>&nbsp;{formatMarketCap(data.mktcap)}</span>
+            <span style={{color:C.textDim,fontSize:10}}>Vol </span><span style={{color:C.textWhite,fontSize:10,marginRight:10}}>&nbsp;{formatVolume(data.volume)}</span>
+            <span style={{color:C.textDim,fontSize:10}}>O </span><span style={{color:C.textWhite,fontSize:10,marginRight:10}}>&nbsp;{data.open}</span>
+            <span style={{color:C.textDim,fontSize:10}}>H </span><span style={{color:C.textGreenBright,fontSize:10,marginRight:10}}>&nbsp;{data.high}</span>
+            <span style={{color:C.textDim,fontSize:10}}>L </span><span style={{color:C.textRed,fontSize:10,marginRight:14}}>&nbsp;{data.low}</span>
+            <span style={{color:C.textDim,fontSize:10}}>Mkt Cap </span><span style={{color:C.textWhite,fontSize:10,marginRight:14}}>&nbsp;{formatMarketCap(data.mktcap)}</span>
             <span style={{background:C.openBadge,color:"#000",fontSize:10,fontWeight:"bold",padding:"1px 8px"}}>OPEN</span>
           </div>
         </div>
       )}
 
       {data&&(
-        <div style={{background:C.bgTabBar,borderBottom:"1px solid #1e1e1e",display:"flex",alignItems:"stretch",flexShrink:0}}>
-          <div style={{padding:"5px 12px",borderRight:"1px solid #222",color:"#aaa",fontSize:11,display:"flex",alignItems:"center",background:"#161616"}}>
-            {data.ticker} {data.exchange} Equity
+        <div style={{background:C.bgTabBar,borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"stretch",flexShrink:0}}>
+          <div style={{padding:"5px 12px",borderRight:`1px solid ${C.border}`,color:C.textDimMid,fontSize:11,display:"flex",alignItems:"center",background:C.bgSection}}>
+            {data.ticker} {data.exchange} {data.assetType}
           </div>
           {TABS.map((t,i)=>(
-            <button key={t} onClick={()=>setActiveTab(i)} style={{background:activeTab===i?C.tabActiveBg:"transparent",color:activeTab===i?C.tabActiveText:C.tabInactiveText,border:"none",borderRight:"1px solid #1e1e1e",fontFamily:"'Courier New',Courier,monospace",fontSize:11,padding:"5px 10px",cursor:"pointer",fontWeight:activeTab===i?"bold":"normal"}}>
+            <button key={t} onClick={()=>setActiveTab(i)} style={{background:activeTab===i?C.tabActiveBg:"transparent",color:activeTab===i?C.tabActiveText:C.tabInactiveText,border:"none",borderRight:`1px solid ${C.border}`,fontFamily:"'Courier New',Courier,monospace",fontSize:11,padding:"5px 10px",cursor:"pointer",fontWeight:activeTab===i?"bold":"normal"}}>
               [{i}] {t}
             </button>
           ))}
         </div>
       )}
 
-      <div style={{background:"#0f0f0f",borderBottom:"1px solid #1e1e1e",padding:"4px 14px",display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
-        <span style={{color:"#666",fontSize:11}}>▶</span>
-        <input value={tickerInput} onChange={e=>setTickerInput(e.target.value.toUpperCase().replace(/[^A-Z]/g,""))}
+      <div style={{background:"#0f0f0f",borderBottom:`1px solid ${C.border}`,padding:"4px 14px",display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+        <span style={{color:C.textDim,fontSize:11}}>▶</span>
+        <input value={tickerInput} onChange={e=>setTickerInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))}
           onKeyDown={e=>e.key==="Enter"&&load(tickerInput)}
-          placeholder="Digite o ticker: AAPL, MSFT, TSLA, META, NVDA, AMZN, GOOGL..."
+          placeholder="NVDA AAPL MSFT TSLA META AMZN GOOGL AMD JPM NFLX | PETR4 VALE3 ITUB4 BBDC4 WEGE3 | BTC ETH SOL | SPX NDX IBOV | XAUUSD USDBRL"
           style={{background:"transparent",border:"none",outline:"none",color:C.textWhite,fontFamily:"'Courier New',Courier,monospace",fontSize:12,flex:1}}/>
-        <button onClick={()=>load(tickerInput)} style={{background:"#1e3a1e",border:"1px solid #33cc66",color:C.textGreen,fontFamily:"monospace",fontSize:10,padding:"2px 14px",cursor:"pointer"}}>GO</button>
+        <button onClick={()=>load(tickerInput)} style={{background:"#1e3a1e",border:`1px solid ${C.textGreen}`,color:C.textGreen,fontFamily:"monospace",fontSize:10,padding:"2px 14px",cursor:"pointer"}}>GO</button>
+        <span style={{color:C.textDim,fontSize:9}}>[T]=theme</span>
       </div>
 
       {loading&&(
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-          <div style={{color:C.textGreen,fontSize:13,letterSpacing:2}}>CARREGANDO...</div>
+          <div style={{color:C.textGreen,fontSize:13,letterSpacing:2}}>LOADING...</div>
         </div>
       )}
 
-      {data&&!loading&&activeTab===1&&(
-        <div style={{flex:1,overflowY:"auto"}}>
-          <div style={{padding:"8px 14px 0",borderBottom:"1px solid #1e1e1e"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:2}}>
-              <span style={{color:C.textYellow,fontSize:14,fontWeight:"bold",letterSpacing:1}}>{data.name}</span>
-              <span style={{color:"#666",fontSize:10}}>FIGI {data.figi}</span>
-            </div>
-            <div style={{color:"#999",fontSize:11,lineHeight:1.75,paddingBottom:10}}>{data.description}</div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:"1px solid #1e1e1e"}}>
-            <div style={{borderRight:"1px solid #1e1e1e"}}>
-              <Row num="8" label="Price Chart" cmd="GP"/>
-              <div style={{background:C.bgChart,padding:"4px 0 0"}}><LineChart series={series} width={420} height={200}/></div>
-            </div>
-            <div style={{borderRight:"1px solid #1e1e1e"}}>
-              <Row num="9" label="Estimates" cmd="EE"/>
-              <DRow label="P/E" value={data.pe}/>
-              <DRow label="Est P/E" value={data.estPe}/>
-              <DRow label="T12M EPS (USD)" value={data.eps}/>
-              <DRow label="Est EPS" value={data.estEps}/>
-              <DRow label="Est PEG" value={data.peg}/>
-              <Row num="12" label="Dividend" cmd="DVD"/>
-              <DRow label="Ind Gross Yield" value={data.divYield}/>
-              <div style={{padding:"4px 10px"}}><span style={{color:"#666",fontSize:10}}>{data.divNote}</span></div>
-            </div>
-            <div>
-              <Row num="13" label="Corporate Info"/>
-              <DRow label="Website" noColon><span style={{color:C.textBlue,fontSize:11}}>{data.website}</span></DRow>
-              <DRow label="" value={data.headquarters} indent/>
-              <DRow label="Employees" value={data.employees}/>
-              <Row num="15" label="Management" cmd="MGMT"/>
-              <div style={{padding:"4px 10px"}}>
-                <div style={{color:C.textYellow,fontSize:11,fontWeight:"bold"}}>{data.ceo}</div>
-                <div style={{color:"#666",fontSize:10,paddingLeft:14}}>{data.ceoTitle}</div>
-              </div>
-              <div style={{padding:"2px 10px 4px"}}>
-                <div style={{color:C.textYellow,fontSize:11}}>{data.cfo}</div>
-                <div style={{color:"#666",fontSize:10,paddingLeft:14}}>{data.cfoTitle}</div>
-              </div>
-              <div style={{borderTop:"1px solid #1e1e1e"}}>
-                <DRow label="12M Tot Ret" value={data.totRet12m} valueColor={C.textGreenBright}/>
-                <DRow label="Beta vs SPX" value={data.betaVsSPX}/>
-                <DRow label="52W High" value={data.h52} valueColor={C.textGreenBright}/>
-                <DRow label="52W Low" value={data.l52} valueColor={C.textRed}/>
-              </div>
-            </div>
-          </div>
-          {news.map(n=>(
-            <div key={n.id} style={{display:"flex",gap:8,padding:"3px 14px",borderBottom:"1px solid #161616",cursor:"pointer"}}>
-              <span style={{color:"#666",fontSize:10,minWidth:28}}>{n.id}</span>
-              <span style={{color:"#666",fontSize:10,minWidth:60}}>{n.src} {n.time}</span>
-              <span style={{color:"#3377cc",fontSize:10}}>{n.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {!loading&&(!data?<HomeTab C={C} onLoad={load}/>:tabContent())}
 
-      {data&&!loading&&activeTab===2&&(
-        <div style={{flex:1,overflowY:"auto",padding:14}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,maxWidth:780}}>
-            <div style={{border:"1px solid #1e1e1e"}}>
-              <Row num="1" label="Valuation Multiples"/>
-              {[["P/E (TTM)",data.pe],["P/S (TTM)",(parseFloat(data.pe)/20).toFixed(2)],["EV/EBITDA",(parseFloat(data.pe)*0.75).toFixed(2)]].map(([l,v])=><DRow key={l} label={l} value={v}/>)}
-            </div>
-            <div style={{border:"1px solid #1e1e1e"}}>
-              <Row num="2" label="Returns & Risk"/>
-              {[["YTD Return",data.ytd,C.textGreenBright],["12M Total Return",data.totRet12m,C.textGreenBright],["Beta vs SPX",data.betaVsSPX,C.textWhite]].map(([l,v,col])=><DRow key={l} label={l} value={v} valueColor={col}/>)}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {data&&!loading&&activeTab===5&&(
-        <div style={{flex:1,overflowY:"auto"}}>
-          <Row num="1" label={`Latest News — ${data.ticker}`}/>
-          {news.map(n=>(
-            <div key={n.id} style={{display:"flex",gap:10,padding:"5px 14px",borderBottom:"1px solid #161616",cursor:"pointer"}}>
-              <span style={{color:"#666",fontSize:10,minWidth:28}}>{n.id}</span>
-              <span style={{color:"#446688",fontSize:10,minWidth:60}}>{n.src}</span>
-              <span style={{color:"#666",fontSize:10,minWidth:40}}>{n.time}</span>
-              <span style={{color:C.textGreen,fontSize:11}}>{n.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {data&&!loading&&![1,2,5].includes(activeTab)&&(
-        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{color:C.textYellow,fontSize:14,marginBottom:8}}>[{activeTab}] {TABS[activeTab]}</div>
-            <div style={{color:"#666",fontSize:11}}>Abas disponíveis: [1] OVERVIEW · [2] ANALYSIS · [5] NEWS</div>
-          </div>
-        </div>
-      )}
-
-      <TickerTape/>
+      <TickerTape C={C}/>
     </div>
   );
 }
